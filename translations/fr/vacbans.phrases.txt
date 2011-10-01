@@ -1,0 +1,15 @@
+"Phrases"
+{
+	"Kicked"
+	{
+		"fr"		"Vous avez été kické par le VAC pour une triche antérieure."
+	}
+	"Banned"
+	{
+		"fr"		"Vous avez été banni par le VAC pour une triche antérieure."
+	}
+	"Banned_Server"
+	{
+		"fr"		"banni pour une violation antérieure du VAC."
+	}
+}

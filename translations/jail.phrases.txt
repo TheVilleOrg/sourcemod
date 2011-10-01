@@ -1,0 +1,31 @@
+﻿"Phrases"
+{
+	"Jailed player"
+	{
+		"en"		"sent %s to jail"
+	}
+	"Released player"
+	{
+		"en"		"released %s from jail"
+	}
+	"Jail menu"
+	{
+		"en"		"Jail/Release Player"
+	}
+	"Jailed"
+	{
+		"en"		"You have been sent to jail!"
+	}
+	"Released"
+	{
+		"en"		"You have been released from jail"
+	}
+	"No coords"
+	{
+		"en"		"Jail coordinates have not been set for this map"
+	}
+	"Coords saved"
+	{
+		"en"		"Jail coordinates saved for map: %s"
+	}
+}

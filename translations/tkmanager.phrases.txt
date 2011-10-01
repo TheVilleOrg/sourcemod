@@ -1,0 +1,31 @@
+﻿"Phrases"
+{
+	"Gained"
+	{
+		"en"		"You have gained 1 TK point"
+	}
+	"Total"
+	{
+		"en"		"Total"
+	}
+	"Limit"
+	{
+		"en"		"Limit"
+	}
+	"Team killed"
+	{
+		"en"		"team killed"
+	}
+	"Kicked"
+	{
+		"en"		"You were kicked for excessive team killing"
+	}
+	"Banned"
+	{
+		"en"		"was banned for excessive team killing"
+	}
+	"Ban reason"
+	{
+		"en"		"Excessive Team Killing"
+	}
+}
