@@ -24,6 +24,8 @@
 *   lhffan - Swedish translation
 * 
 * Changelog
+* Mar 27, 2013 - v.1.3.5:
+*               [*] Fixed bans firing too early
 * Sep 04, 2011 - v.1.3.4:
 *               [*] Fixed some race conditions
 * Feb 09, 2010 - v.1.3.3:
@@ -61,7 +63,7 @@
 #include <sourcemod>
 #include <socket>
 
-#define PLUGIN_VERSION "1.3.4"
+#define PLUGIN_VERSION "1.3.5"
 
 public Plugin:myinfo = 
 {
@@ -99,7 +101,7 @@ public OnConfigsExecuted()
 	SQL_TConnect(T_DBConnect, db);
 }
 
-public OnClientAuthorized(client, const String:auth[])
+public OnClientPostAdminCheck(client)
 {
 	if(!IsFakeClient(client))
 	{
@@ -107,7 +109,7 @@ public OnClientAuthorized(client, const String:auth[])
 		decl String:steamID[64];
 		decl String:friendID[32];
 		
-		strcopy(steamID, sizeof(steamID), auth);
+		GetClientAuthString(client, steamID, sizeof(steamID));
 		
 		if(GetFriendID(steamID, friendID, sizeof(friendID)))
 		{
@@ -305,7 +307,7 @@ HandleClient(client, const String:friendID[], bool:vacBanned)
 				case 0:
 				{
 					decl String:userformat[64];
-					Format(userformat, sizeof(userformat), "\"%L\"", client);
+					Format(userformat, sizeof(userformat), "%L", client);
 					LogAction(0, client, "%s %T", userformat, "Banned_Server", LANG_SERVER);
 					
 					ServerCommand("sm_ban #%d 0 \"[VAC Status Checker] %T\"", GetClientUserId(client), "Banned", client);
