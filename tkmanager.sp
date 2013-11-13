@@ -93,6 +93,7 @@ public OnPluginStart()
 
 	HookEvent("player_death", Event_PlayerDeath);
 	HookEvent("player_hurt", Event_PlayerHurt);
+	HookEvent("npc_killed", Event_NPCKilled);
 	
 	LoadTranslations("tkmanager.phrases");
 }
@@ -228,6 +229,24 @@ public Action:Event_PlayerHurt(Handle:event, const String:name[], bool:dontBroad
 		if(clientTKPoints[user] >= GetConVarInt(sm_tk_maxpoints))
 		{
 			HandleClient(user, true);
+		}
+	}
+	return Plugin_Handled;
+}
+
+public Action:Event_NPCKilled(Handle:event, const String:name[], bool:dontBroadcast)
+{
+	new user = GetClientOfUserId(GetEventInt(event, "killeridx"));
+	
+	if(user > 0 && clientTKPoints[user] > 0 && GetConVarInt(sm_tk_numkills) > 0)
+	{
+		clientKills[user]++;
+		clientTK[user] = 0;
+		
+		if(clientKills[user] >= GetConVarInt(sm_tk_numkills))
+		{
+			clientTKPoints[user]--;
+			clientKills[user] = 0;
 		}
 	}
 	return Plugin_Handled;
