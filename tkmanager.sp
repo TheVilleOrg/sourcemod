@@ -13,6 +13,8 @@
 * 
 * 
 * Changelog
+* Nov 11, 2013 - v.1.9:
+* 				[+] Added detection of NPC kills in NMRiH
 * Mar 22, 2011 - v.1.8:
 * 				[+] Added translation support
 * Jun 03, 2010 - v.1.7:
@@ -41,7 +43,7 @@
 #pragma semicolon 1
 #include <sourcemod>
 
-#define PLUGIN_VERSION "1.8"
+#define PLUGIN_VERSION "1.9"
 
 public Plugin:myinfo = 
 {
