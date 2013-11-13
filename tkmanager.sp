@@ -188,7 +188,7 @@ public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroa
 			}
 		}
 	}
-	else if(GetConVarInt(sm_tk_numkills) > 0 && clientTKPoints[user] > 0 && GetConVarInt(sm_tk_numkills) > 0)
+	else if(clientTKPoints[user] > 0 && GetConVarInt(sm_tk_numkills) > 0)
 	{
 		clientKills[user]++;
 		clientTK[user] = 0;
