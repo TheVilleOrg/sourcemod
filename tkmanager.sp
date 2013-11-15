@@ -238,7 +238,7 @@ public Action:Event_PlayerHurt(Handle:event, const String:name[], bool:dontBroad
 
 public Action:Event_NPCKilled(Handle:event, const String:name[], bool:dontBroadcast)
 {
-	new user = GetClientOfUserId(GetEventInt(event, "killeridx"));
+	new user = GetEventInt(event, "killeridx");
 	
 	if(user > 0 && clientTKPoints[user] > 0 && GetConVarInt(sm_tk_numkills) > 0)
 	{
