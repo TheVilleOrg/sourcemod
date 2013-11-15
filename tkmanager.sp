@@ -240,7 +240,10 @@ public Action:Event_NPCKilled(Handle:event, const String:name[], bool:dontBroadc
 {
 	new user = GetEventInt(event, "killeridx");
 	
-	if(user > 0 && clientTKPoints[user] > 0 && GetConVarInt(sm_tk_numkills) > 0)
+	if(user == 0 || user > MaxClients || IsImmune(user))
+		return Plugin_Handled;
+	
+	if(clientTKPoints[user] > 0 && GetConVarInt(sm_tk_numkills) > 0)
 	{
 		clientKills[user]++;
 		clientTK[user] = 0;
