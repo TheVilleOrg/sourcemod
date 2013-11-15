@@ -138,7 +138,7 @@ public OnClientDisconnect(client)
 	}
 	else
 	{
-		Format(query, sizeof(query), "INSERT INTO tkmanager VALUES('%s', '%d', '%d', '%d', '%d');", authid, clientTKPoints[client], clientTK[client], clientTW[client], clientKills[client]);
+		Format(query, sizeof(query), "REPLACE INTO tkmanager VALUES('%s', %d, %d, %d, %d);", authid, clientTKPoints[client], clientTK[client], clientTW[client], clientKills[client]);
 	}
 	SQL_TQuery(hDatabase, T_FastQuery, query, sizeof(query));
 	
@@ -296,7 +296,7 @@ public T_Connect(Handle:owner, Handle:hndl, const String:error[], any:data)
 		SetFailState(error);
 	}
 	hDatabase = hndl;
-	SQL_TQuery(hDatabase, T_FastQuery, "CREATE TABLE IF NOT EXISTS tkmanager (steam_id TEXT PRIMARY KEY ON CONFLICT REPLACE, tkpoints INTEGER, numtk INTEGER, numtw INTEGER, numkills INTEGER);");
+	SQL_TQuery(hDatabase, T_FastQuery, "CREATE TABLE IF NOT EXISTS tkmanager (steam_id VARCHAR(64) PRIMARY KEY, tkpoints INTEGER, numtk INTEGER, numtw INTEGER, numkills INTEGER);");
 	
 	if(!GetConVarBool(sm_tk_persist))
 	{
