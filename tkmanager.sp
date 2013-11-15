@@ -15,7 +15,7 @@
 * Changelog
 * Nov 14, 2013 - v.1.9:
 * 				[+] Added detection of NPC kills in NMRiH
-*				[+] Added MySQL support
+*`				[+] Added MySQL support
 * Mar 22, 2011 - v.1.8:
 * 				[+] Added translation support
 * Jun 03, 2010 - v.1.7:
