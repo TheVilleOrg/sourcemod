@@ -25,6 +25,8 @@
 *   ZuCChiNi - Turkish translation
 * 
 * Changelog
+* Nov 15, 2013 - v.1.3.6:
+*               [*] Fixed DataPack operation out of bounds errors
 * Mar 27, 2013 - v.1.3.5:
 *               [*] Fixed bans firing too early
 * Sep 04, 2011 - v.1.3.4:
@@ -64,7 +66,7 @@
 #include <sourcemod>
 #include <socket>
 
-#define PLUGIN_VERSION "1.3.5"
+#define PLUGIN_VERSION "1.3.6"
 
 public Plugin:myinfo = 
 {
