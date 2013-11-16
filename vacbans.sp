@@ -22,6 +22,7 @@
 *   danielsumi - Portuguese translation
 *   Archangel_Dm - Russian translation
 *   lhffan - Swedish translation
+*   ZuCChiNi - Turkish translation
 * 
 * Changelog
 * Mar 27, 2013 - v.1.3.5:
