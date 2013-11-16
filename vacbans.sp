@@ -162,7 +162,7 @@ public OnSocketReceive(Handle:hSock, String:receiveData[], const dataSize, any:h
 
 public OnSocketDisconnected(Handle:hSock, any:hPack)
 {
-	decl String:XMLData[4096];
+	new String:XMLData[4096];
 	
 	CloseHandle(hSock);
 	
@@ -171,10 +171,11 @@ public OnSocketDisconnected(Handle:hSock, any:hPack)
 	new Handle:hData = Handle:ReadPackCell(hPack);
 	
 	ResetPack(hData);
-	if(!IsPackReadable(hData, 1))
-		return;
-	
-	ReadPackString(hData, XMLData, sizeof(XMLData));
+	decl String:buffer[4096];
+	while(IsPackReadable(hData, 1)) {
+		ReadPackString(hData, buffer, sizeof(buffer));
+		StrCat(XMLData, sizeof(XMLData), buffer);
+	}
 	
 	new pos;
 	if((pos = StrContains(XMLData, "Location: http://steamcommunity.com", false)) >= 0)
