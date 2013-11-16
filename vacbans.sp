@@ -169,10 +169,14 @@ public OnSocketDisconnected(Handle:hSock, any:hPack)
 	ResetPack(hPack);
 	new client = ReadPackCell(hPack);
 	new Handle:hData = Handle:ReadPackCell(hPack);
-	ResetPack(hData);
-	ReadPackString(hData, XMLData, sizeof(XMLData));
-	new pos;
 	
+	ResetPack(hData);
+	if(!IsPackReadable(hData, 1))
+		return;
+	
+	ReadPackString(hData, XMLData, sizeof(XMLData));
+	
+	new pos;
 	if((pos = StrContains(XMLData, "Location: http://steamcommunity.com", false)) >= 0)
 	{
 		decl String:redirURL[64];
