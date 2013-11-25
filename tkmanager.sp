@@ -13,6 +13,8 @@
 * 
 * 
 * Changelog
+* Nov 25, 2013 - v.1.9.1:
+* 				[*] Fixed hooking npc_killed on the wrong games
 * Nov 18, 2013 - v.1.9:
 * 				[+] Added detection of NPC kills in NMRiH
 *`				[+] Added MySQL support
@@ -44,7 +46,7 @@
 #pragma semicolon 1
 #include <sourcemod>
 
-#define PLUGIN_VERSION "1.9"
+#define PLUGIN_VERSION "1.9.1"
 
 public Plugin:myinfo = 
 {
@@ -96,7 +98,13 @@ public OnPluginStart()
 
 	HookEvent("player_death", Event_PlayerDeath);
 	HookEvent("player_hurt", Event_PlayerHurt);
-	HookEvent("npc_killed", Event_NPCKilled);
+	
+	decl String:game[16];
+	GetGameFolderName(game, sizeof(game));
+	if(strcmp(game, "nmrih", false) == 0)
+	{
+		HookEvent("npc_killed", Event_NPCKilled);
+	}
 	
 	LoadTranslations("tkmanager.phrases");
 }
