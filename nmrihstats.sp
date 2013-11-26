@@ -1,6 +1,7 @@
 /*
 * 
 * Simple NMRiH Stats
+* https://forums.alliedmods.net/showthread.php?t=230459
 * 
 * Description:
 * This is a basic point-based stats plugin for No More Room in Hell. Players
@@ -10,7 +11,7 @@
 * 
 * 
 * Changelog
-* Nov 20, 2013 - v.1.0:
+* Nov 20, 2013 - v.0.1:
 * 				[*] Initial Release
 * 
 */
@@ -18,7 +19,7 @@
 #pragma semicolon 1
 #include <sourcemod>
 
-#define PLUGIN_VERSION "1.0"
+#define PLUGIN_VERSION "0.1"
 //#define DEBUG
 
 public Plugin:myinfo = 
