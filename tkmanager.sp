@@ -160,6 +160,9 @@ public OnClientAuthorized(client, const String:auth[])
 	clientTK[client] = 0;
 	clientKills[client] = 0;
 	
+	if(IsFakeClient(client))
+		return;
+	
 	decl String:query[1024];
 	Format(query, sizeof(query), "SELECT * FROM tkmanager WHERE steam_id = '%s' LIMIT 1;", auth);
 	SQL_TQuery(hDatabase, T_LoadPlayer, query, client);
@@ -183,10 +186,13 @@ public T_LoadPlayer(Handle:owner, Handle:hndl, const String:error[], any:client)
 #if defined DEBUG
 	LogMessage("User %N has: %d TK points, %d TK, %d TW, %d kills", client, clientTKPoints[client], clientTK[client], clientTW[client], clientKills[client]);
 #endif
-	}
+}
 
 public OnClientDisconnect(client)
 {
+	if(IsFakeClient(client))
+		return;
+	
 	decl String:query[1024], String:authid[64];
 	GetClientAuthString(client, authid, sizeof(authid));
 	
@@ -206,7 +212,7 @@ public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroa
 	new user = GetClientOfUserId(GetEventInt(event, "attacker"));
 	new victim = GetClientOfUserId(GetEventInt(event, "userid"));
 
-	if(user == 0 || user == victim || IsImmune(user))
+	if(user == 0 || user == victim || IsFakeClient(user) || IsImmune(user))
 		return Plugin_Continue;
 
 	new team1 = GetClientTeam(user);
@@ -262,7 +268,7 @@ public Action:Event_PlayerHurt(Handle:event, const String:name[], bool:dontBroad
 	new user = GetClientOfUserId(GetEventInt(event, "attacker"));
 	new victim = GetClientOfUserId(GetEventInt(event, "userid"));
 	
-	if(user == 0 || user == victim || IsImmune(user))
+	if(user == 0 || user == victim || IsFakeClient(user) || IsImmune(user))
 		return Plugin_Continue;
 	
 	new team1 = GetClientTeam(user);
@@ -289,7 +295,7 @@ public Action:Event_NPCKilled(Handle:event, const String:name[], bool:dontBroadc
 {
 	new user = GetEventInt(event, "killeridx");
 	
-	if(user == 0 || user > MaxClients || IsImmune(user))
+	if(user == 0 || user > MaxClients || IsFakeClient(user) || IsImmune(user))
 		return Plugin_Continue;
 	
 	if(clientTKPoints[user] > 0)
