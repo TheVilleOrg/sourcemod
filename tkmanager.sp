@@ -128,20 +128,15 @@ public OnConfigsExecuted()
 	{
 		SQL_TQuery(hDatabase, T_FastQuery, "DELETE FROM tkmanager;");
 	}
-	
-	new maxPlayers = GetMaxClients();
-	
-	for(new i = 1; i <= maxPlayers; i++)
-	{
-		clientTKPoints[i] = 0;
-		clientTW[i] = 0;
-		clientTK[i] = 0;
-		clientKills[i] = 0;
-	}
 }
 
 public OnClientAuthorized(client, const String:auth[])
 {
+	clientTKPoints[client] = 0;
+	clientTW[client] = 0;
+	clientTK[client] = 0;
+	clientKills[client] = 0;
+	
 	decl String:query[1024];
 	Format(query, sizeof(query), "SELECT * FROM tkmanager WHERE steam_id = '%s' LIMIT 1;", auth);
 	SQL_TQuery(hDatabase, T_LoadPlayer, query, client);
@@ -179,11 +174,6 @@ public OnClientDisconnect(client)
 		Format(query, sizeof(query), "REPLACE INTO tkmanager VALUES('%s', %d, %d, %d, %d);", authid, clientTKPoints[client], clientTK[client], clientTW[client], clientKills[client]);
 	}
 	SQL_TQuery(hDatabase, T_FastQuery, query, sizeof(query));
-	
-	clientTKPoints[client] = 0;
-	clientTW[client] = 0;
-	clientTK[client] = 0;
-	clientKills[client] = 0;
 }
 
 public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroadcast)
