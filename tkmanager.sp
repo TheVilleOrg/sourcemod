@@ -147,6 +147,24 @@ public OnClientAuthorized(client, const String:auth[])
 	SQL_TQuery(hDatabase, T_LoadPlayer, query, client);
 }
 
+public T_LoadPlayer(Handle:owner, Handle:hndl, const String:error[], any:client)
+{
+	if(hndl != INVALID_HANDLE)
+	{
+		if(SQL_FetchRow(hndl))
+		{
+			clientTKPoints[client] = SQL_FetchInt(hndl, 1);
+			clientTK[client] = SQL_FetchInt(hndl, 2);
+			clientTW[client] = SQL_FetchInt(hndl, 3);
+			clientKills[client] = SQL_FetchInt(hndl, 4);
+		}
+	}
+	
+	clientLocked[client] = false;
+	
+	// LogMessage("User %N has: %d TK points, %d TK, %d TW, %d kills", client, clientTKPoints[client], clientTK[client], clientTW[client], clientKills[client]);
+}
+
 public OnClientDisconnect(client)
 {
 	decl String:query[1024], String:authid[64];
@@ -307,24 +325,6 @@ public HandleClient(client, bool:tkLimit)
 			}
 		}
 	}
-}
-
-public T_LoadPlayer(Handle:owner, Handle:hndl, const String:error[], any:client)
-{
-	if(hndl != INVALID_HANDLE)
-	{
-		if(SQL_FetchRow(hndl))
-		{
-			clientTKPoints[client] = SQL_FetchInt(hndl, 1);
-			clientTK[client] = SQL_FetchInt(hndl, 2);
-			clientTW[client] = SQL_FetchInt(hndl, 3);
-			clientKills[client] = SQL_FetchInt(hndl, 4);
-		}
-	}
-	
-	clientLocked[client] = false;
-	
-	// LogMessage("User %N has: %d TK points, %d TK, %d TW, %d kills", client, clientTKPoints[client], clientTK[client], clientTW[client], clientKills[client]);
 }
 
 public T_FastQuery(Handle:owner, Handle:hndl, const String:error[], any:data)
