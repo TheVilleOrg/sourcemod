@@ -111,9 +111,23 @@ public OnPluginStart()
 
 public OnConfigsExecuted()
 {
-	decl String:db[64];
-	GetConVarString(sm_tk_db, db, sizeof(db));
-	SQL_TConnect(T_Connect, db);
+	if(hDatabase == INVALID_HANDLE)
+	{
+		decl String:db[64], String:error[256];
+		GetConVarString(sm_tk_db, db, sizeof(db));
+		hDatabase = SQL_Connect(db, true, error, sizeof(error));
+		
+		if(hDatabase == INVALID_HANDLE)
+		{
+			SetFailState(error);
+		}
+		SQL_TQuery(hDatabase, T_FastQuery, "CREATE TABLE IF NOT EXISTS tkmanager (steam_id VARCHAR(64) PRIMARY KEY, tkpoints INTEGER, numtk INTEGER, numtw INTEGER, numkills INTEGER);");
+	}
+	
+	if(!GetConVarBool(sm_tk_persist))
+	{
+		SQL_TQuery(hDatabase, T_FastQuery, "DELETE FROM tkmanager;");
+	}
 	
 	new maxPlayers = GetMaxClients();
 	
@@ -295,21 +309,6 @@ public HandleClient(client, bool:tkLimit)
 				KickClient(client, "%t", "Kicked");
 			}
 		}
-	}
-}
-
-public T_Connect(Handle:owner, Handle:hndl, const String:error[], any:data)
-{
-	if(hndl == INVALID_HANDLE)
-	{
-		SetFailState(error);
-	}
-	hDatabase = hndl;
-	SQL_TQuery(hDatabase, T_FastQuery, "CREATE TABLE IF NOT EXISTS tkmanager (steam_id VARCHAR(64) PRIMARY KEY, tkpoints INTEGER, numtk INTEGER, numtw INTEGER, numkills INTEGER);");
-	
-	if(!GetConVarBool(sm_tk_persist))
-	{
-		SQL_TQuery(hDatabase, T_FastQuery, "DELETE FROM tkmanager;");
 	}
 }
 
