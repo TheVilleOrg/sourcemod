@@ -140,13 +140,10 @@ public OnConfigsExecuted()
 	}
 }
 
-public OnClientPutInServer(client)
+public OnClientAuthorized(client, const String:auth[])
 {
-	decl String:query[1024], String:authid[64];
-	
-	GetClientAuthString(client, authid, sizeof(authid));
-	
-	Format(query, sizeof(query), "SELECT * FROM tkmanager WHERE steam_id = '%s' LIMIT 1;", authid);
+	decl String:query[1024];
+	Format(query, sizeof(query), "SELECT * FROM tkmanager WHERE steam_id = '%s' LIMIT 1;", auth);
 	SQL_TQuery(hDatabase, T_LoadPlayer, query, client);
 }
 
