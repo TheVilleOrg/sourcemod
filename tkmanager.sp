@@ -316,15 +316,12 @@ public T_LoadPlayer(Handle:owner, Handle:hndl, const String:error[], any:client)
 {
 	if(hndl != INVALID_HANDLE)
 	{
-		if(SQL_GetRowCount(hndl) > 0)
+		if(SQL_FetchRow(hndl))
 		{
-			while(SQL_FetchRow(hndl))
-			{
-				clientTKPoints[client] = SQL_FetchInt(hndl, 1);
-				clientTK[client] = SQL_FetchInt(hndl, 2);
-				clientTW[client] = SQL_FetchInt(hndl, 3);
-				clientKills[client] = SQL_FetchInt(hndl, 4);
-			}
+			clientTKPoints[client] = SQL_FetchInt(hndl, 1);
+			clientTK[client] = SQL_FetchInt(hndl, 2);
+			clientTW[client] = SQL_FetchInt(hndl, 3);
+			clientKills[client] = SQL_FetchInt(hndl, 4);
 		}
 	}
 	
