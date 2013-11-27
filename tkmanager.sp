@@ -13,6 +13,10 @@
 * 
 * 
 * Changelog
+* Nov 26, 2013 - v.1.10:
+* 				[*] Fixed race condition with database connection
+*				[*] Fixed consecutive TK count not being reset when sm_tk_numkills = 0
+*				[*] Optimized event binding
 * Nov 25, 2013 - v.1.9.1:
 * 				[*] Fixed hooking npc_killed on the wrong games
 * Nov 18, 2013 - v.1.9:
@@ -46,7 +50,7 @@
 #pragma semicolon 1
 #include <sourcemod>
 
-#define PLUGIN_VERSION "1.9.1"
+#define PLUGIN_VERSION "1.10"
 //#define DEBUG
 
 public Plugin:myinfo = 
@@ -205,6 +209,10 @@ public OnClientDisconnect(client)
 		Format(query, sizeof(query), "REPLACE INTO tkmanager VALUES('%s', %d, %d, %d, %d);", authid, clientTKPoints[client], clientTK[client], clientTW[client], clientKills[client]);
 	}
 	SQL_TQuery(hDatabase, T_FastQuery, query, sizeof(query));
+	
+#if defined DEBUG
+	LogMessage("Saving %N: %d TK points, %d TK, %d TW, %d kills", client, clientTKPoints[client], clientTK[client], clientTW[client], clientKills[client]);
+#endif
 }
 
 public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroadcast)
@@ -223,6 +231,10 @@ public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroa
 		clientTK[user]++;
 		clientTKPoints[user]++;
 		
+#if defined DEBUG
+		LogMessage("User %N has: %d (+1) TK points, %d TK (+1)", user, clientTKPoints[user], clientTK[user]);
+#endif
+
 		if(clientTKPoints[user] >= GetConVarInt(sm_tk_maxpoints))
 		{
 			HandleClient(user, true);
@@ -259,6 +271,10 @@ public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroa
 			clientTKPoints[user]--;
 			clientKills[user] = 0;
 		}
+		
+#if defined DEBUG
+		LogMessage("User %N has: %d TK points, %d TK, %d (+1) kills", user, clientTKPoints[user], clientTK[user], clientKills[user]);
+#endif
 	}
 	return Plugin_Continue;
 }
@@ -277,6 +293,10 @@ public Action:Event_PlayerHurt(Handle:event, const String:name[], bool:dontBroad
 	if(team1 == team2)
 	{
 		clientTW[user]++;
+		
+#if defined DEBUG
+	LogMessage("User %N has: %d TK points, %d TK, %d (+1) TW, %d kills", user, clientTKPoints[user], clientTK[user], clientTW[user], clientKills[user]);
+#endif
 		
 		if(clientTW[user] >= GetConVarInt(sm_tk_numtw))
 		{
@@ -308,6 +328,9 @@ public Action:Event_NPCKilled(Handle:event, const String:name[], bool:dontBroadc
 			clientTKPoints[user]--;
 			clientKills[user] = 0;
 		}
+#if defined DEBUG
+		LogMessage("User %N has: %d TK points, %d TK, %d (+1) kills", user, clientTKPoints[user], clientTK[user], clientKills[user]);
+#endif
 	}
 	return Plugin_Continue;
 }
