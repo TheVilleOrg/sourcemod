@@ -96,9 +96,10 @@ public OnPluginStart()
 	sm_tk_db = CreateConVar("sm_tk_db", "storage-local", "The named database config to use for storing TK points");
 
 	AutoExecConfig(true, "tk_manager");
+	
+	HookConVarChange(sm_tk_numtw, OnConVarChanged);
 
 	HookEvent("player_death", Event_PlayerDeath);
-	HookEvent("player_hurt", Event_PlayerHurt);
 	
 	decl String:game[16];
 	GetGameFolderName(game, sizeof(game));
@@ -123,11 +124,32 @@ public OnConfigsExecuted()
 			SetFailState(error);
 		}
 		SQL_TQuery(hDatabase, T_FastQuery, "CREATE TABLE IF NOT EXISTS tkmanager (steam_id VARCHAR(64) PRIMARY KEY, tkpoints INTEGER, numtk INTEGER, numtw INTEGER, numkills INTEGER);");
+		
+		if(GetConVarInt(sm_tk_numtw) > 0)
+		{
+			HookEvent("player_hurt", Event_PlayerHurt);
+		}
 	}
 	
 	if(!GetConVarBool(sm_tk_persist))
 	{
 		SQL_TQuery(hDatabase, T_FastQuery, "DELETE FROM tkmanager;");
+	}
+}
+
+public OnConVarChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+{
+	if(convar == sm_tk_numtw)
+	{
+		new oldVal = StringToInt(oldValue), newVal = StringToInt(newValue);
+		if(oldVal <= 0 && newVal > 0)
+		{
+			HookEvent("player_hurt", Event_PlayerHurt);
+		}
+		else if(newVal <= 0 && oldVal > 0)
+		{
+			UnhookEvent("player_hurt", Event_PlayerHurt);
+		}
 	}
 }
 
@@ -237,9 +259,6 @@ public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroa
 
 public Action:Event_PlayerHurt(Handle:event, const String:name[], bool:dontBroadcast)
 {
-	if(GetConVarInt(sm_tk_numtw) <= 0)
-		return Plugin_Continue;
-	
 	new user = GetClientOfUserId(GetEventInt(event, "attacker"));
 	new victim = GetClientOfUserId(GetEventInt(event, "userid"));
 	
