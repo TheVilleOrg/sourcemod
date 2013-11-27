@@ -47,6 +47,7 @@
 #include <sourcemod>
 
 #define PLUGIN_VERSION "1.9.1"
+//#define DEBUG
 
 public Plugin:myinfo = 
 {
@@ -157,8 +158,10 @@ public T_LoadPlayer(Handle:owner, Handle:hndl, const String:error[], any:client)
 	
 	clientLocked[client] = false;
 	
-	// LogMessage("User %N has: %d TK points, %d TK, %d TW, %d kills", client, clientTKPoints[client], clientTK[client], clientTW[client], clientKills[client]);
-}
+#if defined DEBUG
+	LogMessage("User %N has: %d TK points, %d TK, %d TW, %d kills", client, clientTKPoints[client], clientTK[client], clientTW[client], clientKills[client]);
+#endif
+	}
 
 public OnClientDisconnect(client)
 {
