@@ -208,8 +208,7 @@ public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroa
 		new mode = GetConVarInt(sm_tk_displaymode);
 		if(mode > 0)
 		{
-			new maxclients = GetMaxClients();
-			for (new i = 1; i <= maxclients; i++)
+			for (new i = 1; i <= MaxClients; i++)
 			{
 				if (!IsClientConnected(i) || !IsClientInGame(i))
 					continue;
