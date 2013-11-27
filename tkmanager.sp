@@ -243,12 +243,12 @@ public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroa
 			}
 		}
 	}
-	else if(clientTKPoints[user] > 0 && GetConVarInt(sm_tk_numkills) > 0)
+	else if(clientTKPoints[user] > 0)
 	{
 		clientKills[user]++;
 		clientTK[user] = 0;
 		
-		if(clientKills[user] >= GetConVarInt(sm_tk_numkills))
+		if(clientKills[user] >= GetConVarInt(sm_tk_numkills) > 0)
 		{
 			clientTKPoints[user]--;
 			clientKills[user] = 0;
@@ -292,12 +292,12 @@ public Action:Event_NPCKilled(Handle:event, const String:name[], bool:dontBroadc
 	if(user == 0 || user > MaxClients || IsImmune(user))
 		return Plugin_Continue;
 	
-	if(clientTKPoints[user] > 0 && GetConVarInt(sm_tk_numkills) > 0)
+	if(clientTKPoints[user] > 0)
 	{
 		clientKills[user]++;
 		clientTK[user] = 0;
 		
-		if(clientKills[user] >= GetConVarInt(sm_tk_numkills))
+		if(clientKills[user] >= GetConVarInt(sm_tk_numkills) > 0)
 		{
 			clientTKPoints[user]--;
 			clientKills[user] = 0;
