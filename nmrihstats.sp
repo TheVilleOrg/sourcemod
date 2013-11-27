@@ -57,30 +57,29 @@ public OnPluginStart()
 	HookEvent("player_death", Event_PlayerDeath);
 	HookEvent("npc_killed", Event_NPCKilled);
 	HookEvent("player_changename", Event_ChangeName);
+	
+	ConnectDatabase();
+}
+
+public ConnectDatabase()
+{
+	new String:db[] = "storage-local";
+	if(SQL_CheckConfig("nmrihstats"))
+	{
+		db = "nmrihstats";
+	}
+	decl String:error[256];
+	hDatabase = SQL_Connect(db, true, error, sizeof(error));
+	if(hDatabase == INVALID_HANDLE)
+	{
+		SetFailState(error);
+	}
+	
+	SQL_TQuery(hDatabase, T_FastQuery, "CREATE TABLE IF NOT EXISTS nmrihstats (steam_id VARCHAR(64) PRIMARY KEY, name TEXT, points INTEGER, kills INTEGER, deaths INTEGER);");
 }
 
 public OnMapStart()
 {
-	if(SQL_CheckConfig("nmrihstats"))
-	{
-		SQL_TConnect(T_Connect, "nmrihstats");
-	}
-	else
-	{
-		SQL_TConnect(T_Connect, "storage-local");
-	}
-}
-
-public T_Connect(Handle:owner, Handle:hndl, const String:error[], any:data)
-{
-	if(hndl == INVALID_HANDLE)
-	{
-		SetFailState(error);
-	}
-	hDatabase = hndl;
-	
-	SQL_TQuery(hDatabase, T_FastQuery, "CREATE TABLE IF NOT EXISTS nmrihstats (steam_id VARCHAR(64) PRIMARY KEY, name TEXT, points INTEGER, kills INTEGER, deaths INTEGER);");
-	
 	for(new i = 1; i <= MaxClients; i++)
 	{
 		if(IsClientAuthorized(i) && !IsFakeClient(i))
