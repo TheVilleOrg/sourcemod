@@ -182,7 +182,7 @@ public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroa
 	new victim = GetClientOfUserId(GetEventInt(event, "userid"));
 
 	if(user == 0 || user == victim || IsImmune(user))
-		return Plugin_Handled;
+		return Plugin_Continue;
 
 	new team1 = GetClientTeam(user);
 	new team2 = GetClientTeam(victim);
@@ -229,19 +229,19 @@ public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroa
 			clientKills[user] = 0;
 		}
 	}
-	return Plugin_Handled;
+	return Plugin_Continue;
 }
 
 public Action:Event_PlayerHurt(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	if(GetConVarInt(sm_tk_numtw) <= 0)
-		return Plugin_Handled;
+		return Plugin_Continue;
 	
 	new user = GetClientOfUserId(GetEventInt(event, "attacker"));
 	new victim = GetClientOfUserId(GetEventInt(event, "userid"));
 	
 	if(user == 0 || user == victim || IsImmune(user))
-		return Plugin_Handled;
+		return Plugin_Continue;
 	
 	new team1 = GetClientTeam(user);
 	new team2 = GetClientTeam(victim);
@@ -260,7 +260,7 @@ public Action:Event_PlayerHurt(Handle:event, const String:name[], bool:dontBroad
 			HandleClient(user, true);
 		}
 	}
-	return Plugin_Handled;
+	return Plugin_Continue;
 }
 
 public Action:Event_NPCKilled(Handle:event, const String:name[], bool:dontBroadcast)
@@ -268,7 +268,7 @@ public Action:Event_NPCKilled(Handle:event, const String:name[], bool:dontBroadc
 	new user = GetEventInt(event, "killeridx");
 	
 	if(user == 0 || user > MaxClients || IsImmune(user))
-		return Plugin_Handled;
+		return Plugin_Continue;
 	
 	if(clientTKPoints[user] > 0 && GetConVarInt(sm_tk_numkills) > 0)
 	{
@@ -281,7 +281,7 @@ public Action:Event_NPCKilled(Handle:event, const String:name[], bool:dontBroadc
 			clientKills[user] = 0;
 		}
 	}
-	return Plugin_Handled;
+	return Plugin_Continue;
 }
 
 public HandleClient(client, bool:tkLimit)
