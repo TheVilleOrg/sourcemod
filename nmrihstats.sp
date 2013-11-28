@@ -134,6 +134,10 @@ public T_LoadPlayer(Handle:owner, Handle:hndl, const String:error[], any:client)
 			clientPoints[client] = SQL_FetchInt(hndl, 1);
 			clientKills[client] = SQL_FetchInt(hndl, 2);
 			clientDeaths[client] = SQL_FetchInt(hndl, 3);
+			
+#if defined DEBUG
+			LogMessage("Loaded player: %L [%dp %dk %dd]", client, clientPoints[client], clientKills[client], clientDeaths[client]);
+#endif
 		}
 		else
 		{
