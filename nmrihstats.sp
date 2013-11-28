@@ -28,7 +28,7 @@ public Plugin:myinfo =
 	author = "Stevo.TVR",
 	description = "Basic point-based stats for No More Room in Hell",
 	version = PLUGIN_VERSION,
-	url = "http://www.theville.org/"
+	url = "https://forums.alliedmods.net/showthread.php?t=230459"
 }
 
 new Handle:hDatabase = INVALID_HANDLE;
