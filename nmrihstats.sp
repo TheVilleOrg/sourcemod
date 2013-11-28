@@ -12,7 +12,7 @@
 * 
 * Changelog
 * Nov 27, 2013 - v.0.2:
-* 				[+] Added sm_stats_startpoints ConVar to control start points
+* 				[+] Added sm_stats_startpoints ConVar
 * 				[+] Added stat notifications in players' chat area
 * 				[*] Fixed race condition with database connection
 * 				[*] Only updates names when needed
