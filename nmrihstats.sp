@@ -36,6 +36,7 @@ new Handle:hDatabase = INVALID_HANDLE;
 new Handle:sm_stats_killpoints = INVALID_HANDLE;
 new Handle:sm_stats_deathpoints = INVALID_HANDLE;
 new Handle:sm_stats_tkpoints = INVALID_HANDLE;
+new Handle:sm_stats_startpoints = INVALID_HANDLE;
 
 new clientPoints[MAXPLAYERS+1];
 new clientKills[MAXPLAYERS+1];
@@ -55,6 +56,7 @@ public OnPluginStart()
 	sm_stats_killpoints = CreateConVar("sm_stats_killpoints", "1", "Points to award for a zombie kill");
 	sm_stats_deathpoints = CreateConVar("sm_stats_deathpoints", "-10", "Points to award for being killed");
 	sm_stats_tkpoints = CreateConVar("sm_stats_tkpoints", "-20", "Points to award for killing a teammate");
+	sm_stats_startpoints = CreateConVar("sm_stats_startpoints", "0", "Points to give to new players");
 
 	AutoExecConfig(true, "nmrihstats");
 
@@ -137,11 +139,12 @@ public T_LoadPlayer(Handle:owner, Handle:hndl, const String:error[], any:client)
 		{
 			decl String:query[1024], String:escname[129];
 			SQL_EscapeString(hDatabase, playername, escname, sizeof(escname));
+			new points = GetConVarInt(sm_stats_startpoints);
 			
-			Format(query, sizeof(query), "INSERT INTO nmrihstats VALUES ('%s', '%s', 0, 0, 0);", authid, escname);
+			Format(query, sizeof(query), "INSERT INTO nmrihstats VALUES ('%s', '%s', %d, 0, 0);", authid, escname, points);
 			SQL_TQuery(hDatabase, T_FastQuery, query);
 			
-			clientPoints[client] = 0;
+			clientPoints[client] = points;
 			clientKills[client] = 0;
 			clientDeaths[client] = 0;
 			
