@@ -11,7 +11,13 @@
 * 
 * 
 * Changelog
-* Nov 20, 2013 - v.0.1:
+* Nov 27, 2013 - v.0.2:
+* 				[+] Added sm_stats_startpoints ConVar to control start points
+* 				[+] Added stat notifications in players' chat area
+* 				[*] Fixed race condition with database connection
+* 				[*] Only updates names when needed
+* 				[*] Only allows loading on NMRiH
+* Nov 25, 2013 - v.0.1:
 * 				[*] Initial Release
 * 
 */
@@ -19,8 +25,8 @@
 #pragma semicolon 1
 #include <sourcemod>
 
-#define PLUGIN_VERSION "0.1"
-#define DEBUG
+#define PLUGIN_VERSION "0.2"
+//#define DEBUG
 
 public Plugin:myinfo = 
 {
