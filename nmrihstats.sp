@@ -93,7 +93,7 @@ public OnMapStart()
 		{
 			decl String:query[1024], String:auth[64];
 			GetClientAuthString(i, auth, sizeof(auth));
-			Format(query, sizeof(query), "SELECT points, kills, deaths FROM nmrihstats WHERE steam_id = '%s' LIMIT 1;", auth);
+			Format(query, sizeof(query), "SELECT name, points, kills, deaths FROM nmrihstats WHERE steam_id = '%s' LIMIT 1;", auth);
 			SQL_TQuery(hDatabase, T_LoadPlayer, query, i);
 		}
 	}
@@ -105,7 +105,7 @@ public OnClientAuthorized(client, const String:auth[])
 		return;
 	
 	decl String:query[1024];
-	Format(query, sizeof(query), "SELECT points, kills, deaths FROM nmrihstats WHERE steam_id = '%s' LIMIT 1;", auth);
+	Format(query, sizeof(query), "SELECT name, points, kills, deaths FROM nmrihstats WHERE steam_id = '%s' LIMIT 1;", auth);
 	SQL_TQuery(hDatabase, T_LoadPlayer, query, client);
 }
 
@@ -122,11 +122,16 @@ public T_LoadPlayer(Handle:owner, Handle:hndl, const String:error[], any:client)
 
 		if(SQL_FetchRow(hndl))
 		{
-			clientPoints[client] = SQL_FetchInt(hndl, 0);
-			clientKills[client] = SQL_FetchInt(hndl, 1);
-			clientDeaths[client] = SQL_FetchInt(hndl, 2);
+			decl String:dbname[64];
+			SQL_FetchString(hndl, 0, dbname, sizeof(dbname));
+			if(strcmp(playername, dbname) != 0)
+			{
+				UpdatePlayerName(authid, playername);
+			}
 			
-			UpdatePlayerName(authid, playername);
+			clientPoints[client] = SQL_FetchInt(hndl, 1);
+			clientKills[client] = SQL_FetchInt(hndl, 2);
+			clientDeaths[client] = SQL_FetchInt(hndl, 3);
 		}
 		else
 		{
