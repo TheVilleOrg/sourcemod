@@ -20,7 +20,7 @@
 #include <sourcemod>
 
 #define PLUGIN_VERSION "0.1"
-//#define DEBUG
+#define DEBUG
 
 public Plugin:myinfo = 
 {
@@ -44,6 +44,13 @@ new totalPlayers;
 
 public OnPluginStart()
 {
+	decl String:game[16];
+	GetGameFolderName(game, sizeof(game));
+	if(strcmp(game, "nmrih", false) != 0)
+	{
+		SetFailState("Unsupported game!");
+	}
+	
 	CreateConVar("sm_nmrihstats_version", PLUGIN_VERSION, "Simple NMRiH Stats version", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	sm_stats_killpoints = CreateConVar("sm_stats_killpoints", "1", "Points to award for a zombie kill");
 	sm_stats_deathpoints = CreateConVar("sm_stats_deathpoints", "-10", "Points to award for being killed");
