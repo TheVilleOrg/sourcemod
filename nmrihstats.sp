@@ -41,6 +41,10 @@ new Handle:sm_stats_startpoints = INVALID_HANDLE;
 new clientPoints[MAXPLAYERS+1];
 new clientKills[MAXPLAYERS+1];
 new clientDeaths[MAXPLAYERS+1];
+
+new clientKillsSinceNotify[MAXPLAYERS+1];
+new clientKillPointsSinceNotify[MAXPLAYERS+1];
+
 new totalPlayers;
 
 public OnPluginStart()
@@ -68,6 +72,8 @@ public OnPluginStart()
 	HookEvent("player_changename", Event_ChangeName);
 	
 	ConnectDatabase();
+	
+	CreateTimer(300.0, Timer_PlayerKillsNotify, _, TIMER_REPEAT);
 }
 
 public ConnectDatabase()
@@ -105,6 +111,9 @@ public OnClientAuthorized(client, const String:auth[])
 {
 	if(IsFakeClient(client))
 		return;
+	
+	clientKillPointsSinceNotify[client] = 0;
+	clientKillsSinceNotify[client] = 0;
 	
 	decl String:query[1024];
 	Format(query, sizeof(query), "SELECT name, points, kills, deaths FROM nmrihstats WHERE steam_id = '%s' LIMIT 1;", auth);
@@ -155,6 +164,20 @@ public T_LoadPlayer(Handle:owner, Handle:hndl, const String:error[], any:client)
 #if defined DEBUG
 			LogMessage("Adding player: %L", client);
 #endif
+		}
+	}
+}
+
+public Action:Timer_PlayerKillsNotify(Handle:timer)
+{
+	for(new i = 1; i <= MaxClients; i++)
+	{
+		if(IsClientInGame(i) && !IsFakeClient(i) && clientKillPointsSinceNotify[i] != 0)
+		{
+			new change = clientKillPointsSinceNotify[i], kills = clientKillsSinceNotify[i];
+			PrintToChat(i, "\x04[Stats]\x01 %s%d point%s (%d) for killing %d zombie%s", (change >= 0 ? "+" : ""), change, (change != -1 && change != 1 ? "s" : ""), clientPoints[i], kills, (kills > 1 ? "s" : ""));
+			clientKillPointsSinceNotify[i] = 0;
+			clientKillsSinceNotify[i] = 0;
 		}
 	}
 }
@@ -240,7 +263,10 @@ public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroa
 	
 	if(attacker != 0 && attacker != client && !IsFakeClient(attacker) && IsClientAuthorized(attacker))
 	{
-		clientPoints[attacker] += GetConVarInt(sm_stats_tkpoints);
+		new change = GetConVarInt(sm_stats_tkpoints);
+		clientPoints[attacker] += change;
+		
+		PrintToChat(attacker, "\x04[Stats]\x01 %s%d point%s (%d) for killing a teammate!", (change >= 0 ? "+" : ""), change, (change != -1 && change != 1 ? "s" : ""), clientPoints[attacker]);
 		
 #if defined DEBUG
 		LogMessage("Player %L (%d) %d for killing a teammate", attacker, clientPoints[attacker], GetConVarInt(sm_stats_tkpoints));
@@ -254,9 +280,12 @@ public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroa
 		return Plugin_Continue;
 	}
 	
+	new change = GetConVarInt(sm_stats_deathpoints);
 	clientDeaths[client]++;
-	clientPoints[client] += GetConVarInt(sm_stats_deathpoints);
-		
+	clientPoints[client] += change;
+	
+	PrintToChat(client, "\x04[Stats]\x01 %s%d point%s (%d) for getting killed", (change >= 0 ? "+" : ""), change, (change != -1 && change != 1 ? "s" : ""), clientPoints[client]);
+	
 #if defined DEBUG
 	LogMessage("Player %L (%d) %d for getting killed", client, clientPoints[client], GetConVarInt(sm_stats_deathpoints));
 #endif
@@ -276,9 +305,13 @@ public Action:Event_NPCKilled(Handle:event, const String:name[], bool:dontBroadc
 	if(client == 0 || client > MaxClients || IsFakeClient(client) || !IsClientAuthorized(client))
 		return Plugin_Continue;
 	
+	new change = GetConVarInt(sm_stats_killpoints);
 	clientKills[client]++;
-	clientPoints[client] += GetConVarInt(sm_stats_killpoints);
-		
+	clientPoints[client] += change;
+	
+	clientKillsSinceNotify[client]++;
+	clientKillPointsSinceNotify[client] += change;
+	
 #if defined DEBUG
 	LogMessage("Player %L (%d) %d for killing a zombie", client, clientPoints[client], GetConVarInt(sm_stats_killpoints));
 #endif
