@@ -72,7 +72,7 @@ public OnPluginStart()
 	sm_stats_startpoints = CreateConVar("sm_stats_startpoints", "0", "Points to give to new players");
 	sm_stats_headshot_bonus = CreateConVar("sm_stats_headshot_bonus", "1", "Bonus points to award for headshots on top of sm_stats_killpoints");
 	sm_stats_extractionpoints = CreateConVar("sm_stats_extractionpoints", "10", "Points to award for getting extracted");
-	sm_stats_objectivepoints = CreateConVar("sm_stats_objectivepoints", "5", "Points to award team for completing objectives");
+	sm_stats_objectivepoints = CreateConVar("sm_stats_objectivepoints", "5", "Points to award team for completing an objective");
 
 	AutoExecConfig(true, "nmrihstats");
 
