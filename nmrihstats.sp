@@ -11,6 +11,12 @@
 * 
 * 
 * Changelog
+* Dec 01, 2013 - v.0.3:
+* 				[+] Added detection of fire kills
+*				[+] Added headshot bonus
+*				[+] Added point award for getting extracted
+*				[+] Added team point award for completing an objective
+*				[+] Added chat triggers for rank and top10
 * Nov 27, 2013 - v.0.2:
 * 				[+] Added sm_stats_startpoints ConVar
 * 				[+] Added stat notifications in players' chat area
@@ -25,8 +31,8 @@
 #pragma semicolon 1
 #include <sourcemod>
 
-#define PLUGIN_VERSION "0.2"
-#define DEBUG
+#define PLUGIN_VERSION "0.3"
+//#define DEBUG
 
 public Plugin:myinfo = 
 {
