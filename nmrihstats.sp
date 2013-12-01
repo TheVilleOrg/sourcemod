@@ -200,13 +200,17 @@ public Action:Timer_PlayerKillsNotify(Handle:timer)
 
 public Action:Command_Rank(client, args)
 {
+	ShowRank(client);
+	return Plugin_Handled;
+}
+
+public ShowRank(client)
+{
 	SQL_TQuery(hDatabase, T_UpdateTotalQuery, "SELECT COUNT(*) FROM nmrihstats;");
 	
 	decl String:query[1024];
 	Format(query, sizeof(query), "SELECT points FROM nmrihstats WHERE points > %d ORDER BY points ASC;", clientPoints[client]);
 	SQL_TQuery(hDatabase, T_RankQuery, query, client);
-	
-	return Plugin_Handled;
 }
 
 public T_UpdateTotalQuery(Handle:owner, Handle:hndl, const String:error[], any:client)
@@ -233,9 +237,13 @@ public T_RankQuery(Handle:owner, Handle:hndl, const String:error[], any:client)
 
 public Action:Command_Top10(client, args)
 {
-	SQL_TQuery(hDatabase, T_Top10Query, "SELECT name, points FROM nmrihstats ORDER BY points DESC LIMIT 10;", client);
-	
+	ShowTop10(client);
 	return Plugin_Handled;
+}
+
+public ShowTop10(client)
+{
+	SQL_TQuery(hDatabase, T_Top10Query, "SELECT name, points FROM nmrihstats ORDER BY points DESC LIMIT 10;", client);
 }
 
 public T_Top10Query(Handle:owner, Handle:hndl, const String:error[], any:client)
@@ -266,6 +274,38 @@ public Action:Timer_Top10(Handle:timer, Handle:hndl)
 		decl String:line[128];
 		ReadPackString(hndl, line, sizeof(line));
 		PrintToChat(client, line);
+	}
+}
+
+public OnClientSayCommand_Post(client, const String:command[], const String:sArgs[])
+{
+	decl String:text[192];
+	new startidx = 0;
+	
+	if(strcopy(text, sizeof(text), sArgs) < 1)
+	{
+		return;
+	}
+	
+	if(text[0] == '"')
+	{
+		startidx = 1;
+	}
+
+	if((strcmp(command, "say2", false) == 0) && strlen(sArgs) >= 4)
+		startidx += 4;
+
+	if(strcmp(text[startidx], "rank", false) == 0
+	|| strcmp(text[startidx], "/rank", false) == 0
+	|| strcmp(text[startidx], "!rank", false) == 0)
+	{
+		ShowRank(client);
+	}
+	else if(strcmp(text[startidx], "top10", false) == 0
+	|| strcmp(text[startidx], "/top10", false) == 0
+	|| strcmp(text[startidx], "!top10", false) == 0)
+	{
+		ShowTop10(client);
 	}
 }
 
