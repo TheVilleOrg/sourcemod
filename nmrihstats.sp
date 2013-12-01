@@ -4,10 +4,17 @@
 * https://forums.alliedmods.net/showthread.php?t=230459
 * 
 * Description:
-* This is a basic point-based stats plugin for No More Room in Hell. Players
-* get +1 for each zombie killed and -10 for each death. These values are
-* configurable. Also adds rank and top10 commands. Stat data is stored in a
-* configurable database.
+* This is a basic point-based stats plugin for No More Room in Hell, with rank
+* and top10 commands. Stat data is stored in a configurable database.
+* 
+* Default Configuration:
+* 	- Starting score: 0
+* 	- Zombie kill: +1
+* 	- Headshot bonus: +1
+* 	- Death: -10
+* 	- Team kill: -20
+* 	- Extraction: +10
+* 	- Objective complete: +5
 * 
 * 
 * Changelog
