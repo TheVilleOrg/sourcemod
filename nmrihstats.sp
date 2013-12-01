@@ -68,7 +68,7 @@ public OnPluginStart()
 	sm_stats_deathpoints = CreateConVar("sm_stats_deathpoints", "-10", "Points to award for being killed");
 	sm_stats_tkpoints = CreateConVar("sm_stats_tkpoints", "-20", "Points to award for killing a teammate");
 	sm_stats_startpoints = CreateConVar("sm_stats_startpoints", "0", "Points to give to new players");
-	sm_stats_startpoints = CreateConVar("sm_stats_headshot_bonus", "1", "Bonus points to award for headshots on top of sm_stats_killpoints");
+	sm_stats_headshot_bonus = CreateConVar("sm_stats_headshot_bonus", "1", "Bonus points to award for headshots on top of sm_stats_killpoints");
 
 	AutoExecConfig(true, "nmrihstats");
 
