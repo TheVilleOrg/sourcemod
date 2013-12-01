@@ -315,7 +315,8 @@ public Action:Event_ZombieKilledByFire(Handle:event, const String:name[], bool:d
 {
 	new client = GetEventInt(event, "igniter_id");
 #if defined DEBUG
-	LogMessage("Player %L killed a zombie with fire!", client);
+	if(client > 0 && client <= MaxClients && !IsFakeClient(client) && IsClientAuthorized(client))
+		LogMessage("Player %L killed a zombie with fire!", client);
 #endif
 	return ZombieKilled(client);
 }
