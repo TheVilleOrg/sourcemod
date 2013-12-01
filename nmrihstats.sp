@@ -43,6 +43,7 @@ new Handle:sm_stats_killpoints = INVALID_HANDLE;
 new Handle:sm_stats_deathpoints = INVALID_HANDLE;
 new Handle:sm_stats_tkpoints = INVALID_HANDLE;
 new Handle:sm_stats_startpoints = INVALID_HANDLE;
+new Handle:sm_stats_headshot_bonus = INVALID_HANDLE;
 
 new clientPoints[MAXPLAYERS+1];
 new clientKills[MAXPLAYERS+1];
@@ -67,6 +68,7 @@ public OnPluginStart()
 	sm_stats_deathpoints = CreateConVar("sm_stats_deathpoints", "-10", "Points to award for being killed");
 	sm_stats_tkpoints = CreateConVar("sm_stats_tkpoints", "-20", "Points to award for killing a teammate");
 	sm_stats_startpoints = CreateConVar("sm_stats_startpoints", "0", "Points to give to new players");
+	sm_stats_startpoints = CreateConVar("sm_stats_headshot_bonus", "1", "Bonus points to award for headshots on top of sm_stats_killpoints");
 
 	AutoExecConfig(true, "nmrihstats");
 
@@ -76,6 +78,7 @@ public OnPluginStart()
 	HookEvent("player_death", Event_PlayerDeath);
 	HookEvent("npc_killed", Event_NPCKilled);
 	HookEvent("zombie_killed_by_fire", Event_ZombieKilledByFire);
+	HookEvent("zombie_head_split", Event_ZombieHeadSplit);
 	HookEvent("player_changename", Event_ChangeName);
 	
 	ConnectDatabase();
@@ -343,6 +346,30 @@ public ZombieKilled(client)
 	GetClientAuthString(client, authid, sizeof(authid));
 	Format(query, sizeof(query), "UPDATE nmrihstats SET points = %d, kills = %d WHERE steam_id = '%s';", clientPoints[client], clientKills[client], authid);
 	SQL_TQuery(hDatabase, T_FastQuery, query);
+}
+
+public Action:Event_ZombieHeadSplit(Handle:event, const String:name[], bool:dontBroadcast)
+{
+	new client = GetEventInt(event, "player_id");
+	
+	if(client == 0 || client > MaxClients || IsFakeClient(client) || !IsClientAuthorized(client))
+		return Plugin_Continue;
+	
+	new change = GetConVarInt(sm_stats_headshot_bonus);
+	clientPoints[client] += change;
+	
+	clientKillPointsSinceNotify[client] += change;
+	
+#if defined DEBUG
+	LogMessage("Player %L (%d) %d for headshot!", client, clientPoints[client], GetConVarInt(sm_stats_headshot_bonus));
+#endif
+	
+	decl String:query[1024], String:authid[64];
+	GetClientAuthString(client, authid, sizeof(authid));
+	Format(query, sizeof(query), "UPDATE nmrihstats SET points = %d WHERE steam_id = '%s';", clientPoints[client], authid);
+	SQL_TQuery(hDatabase, T_FastQuery, query);
+
+	return Plugin_Continue;
 }
 
 public Action:Event_ChangeName(Handle:event, const String:name[], bool:dontBroadcast)
