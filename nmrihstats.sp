@@ -45,6 +45,7 @@ new Handle:sm_stats_tkpoints = INVALID_HANDLE;
 new Handle:sm_stats_startpoints = INVALID_HANDLE;
 new Handle:sm_stats_headshot_bonus = INVALID_HANDLE;
 new Handle:sm_stats_extractionpoints = INVALID_HANDLE;
+new Handle:sm_stats_objectivepoints = INVALID_HANDLE;
 
 new clientPoints[MAXPLAYERS+1];
 new clientKills[MAXPLAYERS+1];
@@ -71,6 +72,7 @@ public OnPluginStart()
 	sm_stats_startpoints = CreateConVar("sm_stats_startpoints", "0", "Points to give to new players");
 	sm_stats_headshot_bonus = CreateConVar("sm_stats_headshot_bonus", "1", "Bonus points to award for headshots on top of sm_stats_killpoints");
 	sm_stats_extractionpoints = CreateConVar("sm_stats_extractionpoints", "10", "Points to award for getting extracted");
+	sm_stats_objectivepoints = CreateConVar("sm_stats_objectivepoints", "5", "Points to award team for completing objectives");
 
 	AutoExecConfig(true, "nmrihstats");
 
@@ -82,6 +84,7 @@ public OnPluginStart()
 	HookEvent("zombie_killed_by_fire", Event_ZombieKilledByFire);
 	HookEvent("zombie_head_split", Event_ZombieHeadSplit);
 	HookEvent("player_extracted", Event_PlayerExtracted);
+	HookEvent("objective_complete", Event_ObjectiveComplete);
 	HookEvent("player_changename", Event_ChangeName);
 	
 	ConnectDatabase();
@@ -396,6 +399,31 @@ public Action:Event_PlayerExtracted(Handle:event, const String:name[], bool:dont
 	Format(query, sizeof(query), "UPDATE nmrihstats SET points = %d WHERE steam_id = '%s';", clientPoints[client], authid);
 	SQL_TQuery(hDatabase, T_FastQuery, query);
 
+	return Plugin_Continue;
+}
+
+public Action:Event_ObjectiveComplete(Handle:event, const String:name[], bool:dontBroadcast)
+{
+	new change = GetConVarInt(sm_stats_objectivepoints);
+	for(new i = 1; i <= MaxClients; i++)
+	{
+		if(!IsClientAuthorized(i) || !IsClientInGame(i) || IsFakeClient(i) || !IsPlayerAlive(i))
+			continue;
+			
+		clientPoints[i] += change;
+		
+		PrintToChat(i, "\x04[Stats]\x01 %s%d point%s (%d) for completing an objective", (change >= 0 ? "+" : ""), change, (change != -1 && change != 1 ? "s" : ""), clientPoints[i]);
+		
+#if defined DEBUG
+		LogMessage("Player %L (%d) %d for completing an objective", i, clientPoints[i], GetConVarInt(sm_stats_objectivepoints));
+#endif
+		
+		decl String:query[1024], String:authid[64];
+		GetClientAuthString(i, authid, sizeof(authid));
+		Format(query, sizeof(query), "UPDATE nmrihstats SET points = %d WHERE steam_id = '%s';", clientPoints[i], authid);
+		SQL_TQuery(hDatabase, T_FastQuery, query);
+	}
+	
 	return Plugin_Continue;
 }
 
