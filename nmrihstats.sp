@@ -308,7 +308,8 @@ public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroa
 public Action:Event_NPCKilled(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	new client = GetEventInt(event, "killeridx");
-	return ZombieKilled(client);
+	ZombieKilled(client);
+	return Plugin_Continue;
 }
 
 public Action:Event_ZombieKilledByFire(Handle:event, const String:name[], bool:dontBroadcast)
@@ -318,13 +319,14 @@ public Action:Event_ZombieKilledByFire(Handle:event, const String:name[], bool:d
 	if(client > 0 && client <= MaxClients && !IsFakeClient(client) && IsClientAuthorized(client))
 		LogMessage("Player %L killed a zombie with fire!", client);
 #endif
-	return ZombieKilled(client);
+	ZombieKilled(client);
+	return Plugin_Continue;
 }
 
 public ZombieKilled(client)
 {
 	if(client == 0 || client > MaxClients || IsFakeClient(client) || !IsClientAuthorized(client))
-		return Plugin_Continue;
+		return;
 	
 	new change = GetConVarInt(sm_stats_killpoints);
 	clientKills[client]++;
@@ -341,8 +343,6 @@ public ZombieKilled(client)
 	GetClientAuthString(client, authid, sizeof(authid));
 	Format(query, sizeof(query), "UPDATE nmrihstats SET points = %d, kills = %d WHERE steam_id = '%s';", clientPoints[client], clientKills[client], authid);
 	SQL_TQuery(hDatabase, T_FastQuery, query);
-	
-	return Plugin_Continue;
 }
 
 public Action:Event_ChangeName(Handle:event, const String:name[], bool:dontBroadcast)
