@@ -369,11 +369,6 @@ public Action:Event_ZombieHeadSplit(Handle:event, const String:name[], bool:dont
 #if defined DEBUG
 	LogMessage("Player %L (%d) %d for headshot!", client, clientPoints[client], GetConVarInt(sm_stats_headshot_bonus));
 #endif
-	
-	decl String:query[1024], String:authid[64];
-	GetClientAuthString(client, authid, sizeof(authid));
-	Format(query, sizeof(query), "UPDATE nmrihstats SET points = %d WHERE steam_id = '%s';", clientPoints[client], authid);
-	SQL_TQuery(hDatabase, T_FastQuery, query);
 
 	return Plugin_Continue;
 }
