@@ -26,7 +26,7 @@
 #include <sourcemod>
 
 #define PLUGIN_VERSION "0.2"
-//#define DEBUG
+#define DEBUG
 
 public Plugin:myinfo = 
 {
@@ -75,6 +75,7 @@ public OnPluginStart()
 	
 	HookEvent("player_death", Event_PlayerDeath);
 	HookEvent("npc_killed", Event_NPCKilled);
+	HookEvent("zombie_killed_by_fire", Event_ZombieKilledByFire);
 	HookEvent("player_changename", Event_ChangeName);
 	
 	ConnectDatabase();
@@ -307,7 +308,20 @@ public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroa
 public Action:Event_NPCKilled(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	new client = GetEventInt(event, "killeridx");
-	
+	return ZombieKilled(client);
+}
+
+public Action:Event_ZombieKilledByFire(Handle:event, const String:name[], bool:dontBroadcast)
+{
+	new client = GetEventInt(event, "igniter_id");
+#if defined DEBUG
+	LogMessage("Player %L killed a zombie with fire!", client);
+#endif
+	return ZombieKilled(client);
+}
+
+public ZombieKilled(client)
+{
 	if(client == 0 || client > MaxClients || IsFakeClient(client) || !IsClientAuthorized(client))
 		return Plugin_Continue;
 	
