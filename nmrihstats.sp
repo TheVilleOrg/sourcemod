@@ -224,6 +224,9 @@ public Action:Command_Rank(client, args)
 
 public ShowRank(client)
 {
+	if(client == 0)
+		return;
+	
 	SQL_TQuery(hDatabase, T_UpdateTotalQuery, "SELECT COUNT(*) FROM nmrihstats;");
 	
 	decl String:query[1024];
@@ -261,6 +264,9 @@ public Action:Command_Top10(client, args)
 
 public ShowTop10(client)
 {
+	if(client == 0)
+		return;
+	
 	SQL_TQuery(hDatabase, T_Top10Query, "SELECT name, points FROM nmrihstats ORDER BY points DESC LIMIT 10;", client);
 }
 
