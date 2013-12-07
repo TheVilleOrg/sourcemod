@@ -92,6 +92,11 @@ public OnPluginStart()
 	RegConsoleCmd("sm_rank", Command_Rank, "Displays your current rank");
 	RegConsoleCmd("sm_top10", Command_Top10, "Lists top 10 players");
 	
+	RegAdminCmd("sm_stats_setpoints", Command_SetPoints, ADMFLAG_RCON, "Set a player's stat points");
+	RegAdminCmd("sm_stats_setpoints_id", Command_SetPointsId, ADMFLAG_RCON, "Set a SteamID's stat points");
+	
+	LoadTranslations("common.phrases");
+	
 	HookEvent("player_death", Event_PlayerDeath);
 	HookEvent("npc_killed", Event_NPCKilled);
 	HookEvent("zombie_killed_by_fire", Event_ZombieKilledByFire);
@@ -320,6 +325,88 @@ public OnClientSayCommand_Post(client, const String:command[], const String:sArg
 	{
 		ShowTop10(client);
 	}
+}
+
+public Action:Command_SetPoints(client, args)
+{
+	if(args < 2)
+	{
+		ReplyToCommand(client, "[SM] Usage: sm_stats_setpoints <points> <#userid|name>");
+		return Plugin_Handled;
+	}
+	
+	decl String:pointsString[64], String:targetString[256];
+	
+	GetCmdArg(1, pointsString, sizeof(pointsString));
+	new points = StringToInt(pointsString);
+	
+	GetCmdArg(2, targetString, sizeof(targetString));
+	decl targets[64], String:tn[MAX_TARGET_LENGTH], bool:tn_is_ml;
+	new count = ProcessTargetString(targetString, client, targets, sizeof(targets), COMMAND_FILTER_NO_BOTS, tn, sizeof(tn), tn_is_ml);
+	if(count < 1)
+	{
+		ReplyToTargetError(client, count);
+		return Plugin_Handled;
+	}
+	
+	decl String:auth[64];
+	for(new i = 0; i < count; i++)
+	{
+		if(IsClientAuthorized(targets[i]))
+		{
+			GetClientAuthString(targets[i], auth, sizeof(auth));
+			SetPoints(auth, points);
+			clientPoints[i] = points;
+		}
+	}
+	
+	return Plugin_Handled;
+}
+
+public Action:Command_SetPointsId(client, args)
+{
+	if(args < 2)
+	{
+		ReplyToCommand(client, "[SM] Usage: sm_stats_setpoints_id <points> <steamid>");
+		return Plugin_Handled;
+	}
+	
+	decl String:pointsString[64], String:targetString[64], String:auth[129];
+	
+	GetCmdArg(1, pointsString, sizeof(pointsString));
+	new points = StringToInt(pointsString);
+	
+	GetCmdArg(2, targetString, sizeof(targetString));
+	if(strncmp(targetString, "STEAM_", 6) != 0 || targetString[7] != ':')
+	{
+		ReplyToCommand(client, "[SM] %t", "Invalid SteamID specified");
+		return Plugin_Handled;
+	}
+	
+	SQL_EscapeString(hDatabase, targetString, auth, sizeof(auth));
+	SetPoints(auth, points);
+	
+	for(new i = 1; i <= MaxClients; i++)
+	{
+		if(IsClientAuthorized(i))
+		{
+			GetClientAuthString(i, auth, sizeof(auth));
+			if(strcmp(targetString, auth) == 0)
+			{
+				clientPoints[i] = points;
+				break;
+			}
+		}
+	}
+	
+	return Plugin_Handled;
+}
+
+public SetPoints(const String:auth[], points)
+{
+	decl String:query[1024];
+	Format(query, sizeof(query), "UPDATE nmrihstats SET points = %d WHERE steam_id = '%s';", points, auth);
+	SQL_TQuery(hDatabase, T_FastQuery, query);
 }
 
 public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroadcast)
