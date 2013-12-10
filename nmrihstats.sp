@@ -449,7 +449,7 @@ public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroa
 		
 		decl String:query[1024], String:authid[64];
 		GetClientAuthString(attacker, authid, sizeof(authid));
-		Format(query, sizeof(query), "UPDATE nmrihstats SET points = %d WHERE steam_id = '%s';", clientPoints[attacker], authid);
+		Format(query, sizeof(query), "UPDATE nmrihstats SET points = points + %d WHERE steam_id = '%s';", change, authid);
 		SQL_TQuery(hDatabase, T_FastQuery, query);
 		
 		return Plugin_Continue;
@@ -467,7 +467,7 @@ public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroa
 	
 	decl String:query[1024], String:authid[64];
 	GetClientAuthString(client, authid, sizeof(authid));
-	Format(query, sizeof(query), "UPDATE nmrihstats SET points = %d, deaths = %d WHERE steam_id = '%s';", clientPoints[client], clientDeaths[client], authid);
+	Format(query, sizeof(query), "UPDATE nmrihstats SET points = points + %d, deaths = deaths + 1 WHERE steam_id = '%s';", change, authid);
 	SQL_TQuery(hDatabase, T_FastQuery, query);
 	
 	return Plugin_Continue;
@@ -509,7 +509,7 @@ public ZombieKilled(client)
 	
 	decl String:query[1024], String:authid[64];
 	GetClientAuthString(client, authid, sizeof(authid));
-	Format(query, sizeof(query), "UPDATE nmrihstats SET points = %d, kills = %d WHERE steam_id = '%s';", clientPoints[client], clientKills[client], authid);
+	Format(query, sizeof(query), "UPDATE nmrihstats SET points = points + %d, kills = kills + 1 WHERE steam_id = '%s';", change, authid);
 	SQL_TQuery(hDatabase, T_FastQuery, query);
 }
 
@@ -529,6 +529,11 @@ public Action:Event_ZombieHeadSplit(Handle:event, const String:name[], bool:dont
 	LogMessage("Player %L (%d) %d for headshot!", client, clientPoints[client], GetConVarInt(sm_stats_headshot_bonus));
 #endif
 
+	decl String:query[1024], String:authid[64];
+	GetClientAuthString(client, authid, sizeof(authid));
+	Format(query, sizeof(query), "UPDATE nmrihstats SET points = points + %d WHERE steam_id = '%s';", change, authid);
+	SQL_TQuery(hDatabase, T_FastQuery, query);
+	
 	return Plugin_Continue;
 }
 
@@ -550,7 +555,7 @@ public Action:Event_PlayerExtracted(Handle:event, const String:name[], bool:dont
 	
 	decl String:query[1024], String:authid[64];
 	GetClientAuthString(client, authid, sizeof(authid));
-	Format(query, sizeof(query), "UPDATE nmrihstats SET points = %d WHERE steam_id = '%s';", clientPoints[client], authid);
+	Format(query, sizeof(query), "UPDATE nmrihstats SET points = points + %d WHERE steam_id = '%s';", change, authid);
 	SQL_TQuery(hDatabase, T_FastQuery, query);
 
 	return Plugin_Continue;
@@ -574,7 +579,7 @@ public Action:Event_ObjectiveComplete(Handle:event, const String:name[], bool:do
 		
 		decl String:query[1024], String:authid[64];
 		GetClientAuthString(i, authid, sizeof(authid));
-		Format(query, sizeof(query), "UPDATE nmrihstats SET points = %d WHERE steam_id = '%s';", clientPoints[i], authid);
+		Format(query, sizeof(query), "UPDATE nmrihstats SET points = points + %d WHERE steam_id = '%s';", change, authid);
 		SQL_TQuery(hDatabase, T_FastQuery, query);
 	}
 	
