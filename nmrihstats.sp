@@ -39,7 +39,7 @@
 #include <sourcemod>
 
 #define PLUGIN_VERSION "0.3"
-//#define DEBUG
+#define DEBUG
 
 public Plugin:myinfo = 
 {
@@ -55,7 +55,6 @@ new Handle:hDatabase = INVALID_HANDLE;
 new Handle:sm_stats_killpoints = INVALID_HANDLE;
 new Handle:sm_stats_deathpoints = INVALID_HANDLE;
 new Handle:sm_stats_tkpoints = INVALID_HANDLE;
-new Handle:sm_stats_startpoints = INVALID_HANDLE;
 new Handle:sm_stats_headshot_bonus = INVALID_HANDLE;
 new Handle:sm_stats_extractionpoints = INVALID_HANDLE;
 new Handle:sm_stats_objectivepoints = INVALID_HANDLE;
@@ -82,7 +81,6 @@ public OnPluginStart()
 	sm_stats_killpoints = CreateConVar("sm_stats_killpoints", "1", "Points to award for a zombie kill");
 	sm_stats_deathpoints = CreateConVar("sm_stats_deathpoints", "-10", "Points to award for getting killed");
 	sm_stats_tkpoints = CreateConVar("sm_stats_tkpoints", "-20", "Points to award for killing a teammate");
-	sm_stats_startpoints = CreateConVar("sm_stats_startpoints", "0", "Points to give to new players");
 	sm_stats_headshot_bonus = CreateConVar("sm_stats_headshot_bonus", "1", "Bonus points to award for headshots on top of sm_stats_killpoints");
 	sm_stats_extractionpoints = CreateConVar("sm_stats_extractionpoints", "10", "Points to award for getting extracted");
 	sm_stats_objectivepoints = CreateConVar("sm_stats_objectivepoints", "5", "Points to award team for completing an objective");
@@ -161,13 +159,12 @@ public T_LoadPlayer(Handle:owner, Handle:hndl, const String:error[], any:client)
 	
 	if(hndl != INVALID_HANDLE)
 	{
-		decl String:authid[64], String:playername[64];
-		GetClientAuthString(client, authid, sizeof(authid));
-		GetClientName(client, playername, sizeof(playername));
-
 		if(SQL_FetchRow(hndl))
 		{
-			decl String:dbname[64];
+			decl String:authid[64], String:playername[64], String:dbname[64];
+			GetClientAuthString(client, authid, sizeof(authid));
+			GetClientName(client, playername, sizeof(playername));
+			
 			SQL_FetchString(hndl, 0, dbname, sizeof(dbname));
 			if(strcmp(playername, dbname) != 0)
 			{
@@ -184,9 +181,25 @@ public T_LoadPlayer(Handle:owner, Handle:hndl, const String:error[], any:client)
 		}
 		else
 		{
-			decl String:query[1024], String:escname[129];
+			SQL_TQuery(hDatabase, T_AddPlayer, "SELECT AVG(points) FROM nmrihstats;", client);
+		}
+	}
+}
+
+public T_AddPlayer(Handle:owner, Handle:hndl, const String:error[], any:client)
+{
+	if(!IsClientAuthorized(client) || IsFakeClient(client))
+		return;
+	
+	if(hndl != INVALID_HANDLE)
+	{
+		if(SQL_FetchRow(hndl))
+		{
+			decl String:query[1024], String:authid[64], String:playername[64], String:escname[129];
+			GetClientAuthString(client, authid, sizeof(authid));
+			GetClientName(client, playername, sizeof(playername));
 			SQL_EscapeString(hDatabase, playername, escname, sizeof(escname));
-			new points = GetConVarInt(sm_stats_startpoints);
+			new points = SQL_FetchInt(hndl, 0);
 			
 			Format(query, sizeof(query), "INSERT INTO nmrihstats VALUES ('%s', '%s', %d, 0, 0);", authid, escname, points);
 			SQL_TQuery(hDatabase, T_FastQuery, query);
@@ -196,7 +209,7 @@ public T_LoadPlayer(Handle:owner, Handle:hndl, const String:error[], any:client)
 			clientDeaths[client] = 0;
 			
 #if defined DEBUG
-			LogMessage("Adding player: %L", client);
+			LogMessage("Adding player: %L [%dp %dk %dd]", client, clientPoints[client], clientKills[client], clientDeaths[client]);
 #endif
 		}
 	}
