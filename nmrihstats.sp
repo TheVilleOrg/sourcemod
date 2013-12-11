@@ -67,6 +67,7 @@ new clientKillsSinceNotify[MAXPLAYERS+1];
 new clientKillPointsSinceNotify[MAXPLAYERS+1];
 
 new totalPlayers;
+new resetCode;
 
 public OnPluginStart()
 {
@@ -92,6 +93,7 @@ public OnPluginStart()
 	
 	RegAdminCmd("sm_stats_setpoints", Command_SetPoints, ADMFLAG_RCON, "Set a player's stat points");
 	RegAdminCmd("sm_stats_setpoints_id", Command_SetPointsId, ADMFLAG_RCON, "Set a SteamID's stat points");
+	RegAdminCmd("sm_stats_reset", Command_Reset, ADMFLAG_RCON, "Reset all stats. Use once to get code, use with code to confirm.");
 	
 	LoadTranslations("common.phrases");
 	
@@ -426,6 +428,33 @@ public SetPoints(const String:auth[], points)
 	decl String:query[1024];
 	Format(query, sizeof(query), "UPDATE nmrihstats SET points = %d WHERE steam_id = '%s';", points, auth);
 	SQL_TQuery(hDatabase, T_FastQuery, query);
+}
+
+public Action:Command_Reset(client, args)
+{
+	if(args < 1)
+	{
+		resetCode = GetRandomInt(100000, 999999);
+		ReplyToCommand(client, "[SM] Usage: sm_stats_reset %d", resetCode);
+		return Plugin_Handled;
+	}
+	
+	decl String:arg[8];
+	GetCmdArg(1, arg, sizeof(arg));
+	new code = StringToInt(arg);
+	
+	if(resetCode == 0 || resetCode != code)
+	{
+		ReplyToCommand(client, "[SM] Error: Incorrect confirmation code!");
+		return Plugin_Handled;
+	}
+	
+	resetCode = 0;
+	SQL_TQuery(hDatabase, T_FastQuery,"DELETE FROM nmrihstats", 0, DBPrio_High);
+	ReplyToCommand(client, "[SM] Success! The stats database has been reset.");
+	ReplyToCommand(client, "[SM] Reload the plugin or change map on all servers using this database");
+	
+	return Plugin_Handled;
 }
 
 public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroadcast)
