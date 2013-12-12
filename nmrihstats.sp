@@ -8,7 +8,6 @@
 * and top10 commands. Stat data is stored in a configurable database.
 * 
 * Default Configuration:
-* 	- Starting score: 0
 * 	- Zombie kill: +1
 * 	- Headshot bonus: +1
 * 	- Death: -10
@@ -18,6 +17,13 @@
 * 
 * 
 * Changelog
+* Dec 11, 2013 - v.0.4:
+* 				[+] Added commands to set players' point values manually
+*				[+] Added command to reset the stats database
+*				[-] Removed sm_stats_startpoints ConVar
+*				[*] New players now start at the average score of all players
+*				[*] Fixed server being able to call rank and top10 commands
+*				[*] Fixed plugin overriding database changes from other sources
 * Dec 01, 2013 - v.0.3:
 * 				[+] Added detection of fire kills
 *				[+] Added headshot bonus
@@ -38,8 +44,8 @@
 #pragma semicolon 1
 #include <sourcemod>
 
-#define PLUGIN_VERSION "0.3"
-#define DEBUG
+#define PLUGIN_VERSION "0.4"
+//#define DEBUG
 
 public Plugin:myinfo = 
 {
