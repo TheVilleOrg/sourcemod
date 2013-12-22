@@ -64,6 +64,7 @@ new Handle:sm_stats_tkpoints = INVALID_HANDLE;
 new Handle:sm_stats_headshot_bonus = INVALID_HANDLE;
 new Handle:sm_stats_extractionpoints = INVALID_HANDLE;
 new Handle:sm_stats_objectivepoints = INVALID_HANDLE;
+new Handle:sm_stats_start_at_avg = INVALID_HANDLE;
 
 new clientPoints[MAXPLAYERS+1];
 new clientKills[MAXPLAYERS+1];
@@ -91,6 +92,7 @@ public OnPluginStart()
 	sm_stats_headshot_bonus = CreateConVar("sm_stats_headshot_bonus", "1", "Bonus points to award for headshots on top of sm_stats_killpoints");
 	sm_stats_extractionpoints = CreateConVar("sm_stats_extractionpoints", "10", "Points to award for getting extracted");
 	sm_stats_objectivepoints = CreateConVar("sm_stats_objectivepoints", "5", "Points to award team for completing an objective");
+	sm_stats_start_at_avg = CreateConVar("sm_stats_start_at_avg", "1", "New players start with the average of all player scores (0 = players start at 0)", _, true, 0.0, true, 1.0);
 
 	AutoExecConfig(true, "nmrihstats");
 
@@ -189,38 +191,50 @@ public T_LoadPlayer(Handle:owner, Handle:hndl, const String:error[], any:client)
 		}
 		else
 		{
-			SQL_TQuery(hDatabase, T_AddPlayer, "SELECT AVG(points) FROM nmrihstats;", client);
+			if(GetConVarBool(sm_stats_start_at_avg))
+			{
+				SQL_TQuery(hDatabase, T_AddPlayer, "SELECT AVG(points) FROM nmrihstats;", client);
+			}
+			else
+			{
+				AddPlayer(client, 0);
+			}
 		}
 	}
 }
 
 public T_AddPlayer(Handle:owner, Handle:hndl, const String:error[], any:client)
 {
-	if(!IsClientAuthorized(client) || IsFakeClient(client))
-		return;
-	
 	if(hndl != INVALID_HANDLE)
 	{
 		if(SQL_FetchRow(hndl))
 		{
-			decl String:query[1024], String:authid[64], String:playername[64], String:escname[129];
-			GetClientAuthString(client, authid, sizeof(authid));
-			GetClientName(client, playername, sizeof(playername));
-			SQL_EscapeString(hDatabase, playername, escname, sizeof(escname));
 			new points = SQL_FetchInt(hndl, 0);
-			
-			Format(query, sizeof(query), "INSERT INTO nmrihstats VALUES ('%s', '%s', %d, 0, 0);", authid, escname, points);
-			SQL_TQuery(hDatabase, T_FastQuery, query);
-			
-			clientPoints[client] = points;
-			clientKills[client] = 0;
-			clientDeaths[client] = 0;
-			
-#if defined DEBUG
-			LogMessage("Adding player: %L [%dp %dk %dd]", client, clientPoints[client], clientKills[client], clientDeaths[client]);
-#endif
+			AddPlayer(client, points);
 		}
 	}
+}
+
+public AddPlayer(client, points)
+{
+	if(!IsClientAuthorized(client) || IsFakeClient(client))
+		return;
+
+	decl String:query[1024], String:authid[64], String:playername[64], String:escname[129];
+	GetClientAuthString(client, authid, sizeof(authid));
+	GetClientName(client, playername, sizeof(playername));
+	SQL_EscapeString(hDatabase, playername, escname, sizeof(escname));
+	
+	Format(query, sizeof(query), "INSERT INTO nmrihstats VALUES ('%s', '%s', %d, 0, 0);", authid, escname, points);
+	SQL_TQuery(hDatabase, T_FastQuery, query);
+	
+	clientPoints[client] = points;
+	clientKills[client] = 0;
+	clientDeaths[client] = 0;
+	
+#if defined DEBUG
+	LogMessage("Adding player: %L [%dp %dk %dd]", client, clientPoints[client], clientKills[client], clientDeaths[client]);
+#endif
 }
 
 public Action:Timer_PlayerKillsNotify(Handle:timer)
