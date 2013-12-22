@@ -63,7 +63,7 @@ new Handle:sm_stats_deathpoints = INVALID_HANDLE;
 new Handle:sm_stats_tkpoints = INVALID_HANDLE;
 new Handle:sm_stats_headshot_bonus = INVALID_HANDLE;
 new Handle:sm_stats_extractionpoints = INVALID_HANDLE;
-new Handle:sm_stats_objectivepoints = INVALID_HANDLE;
+//new Handle:sm_stats_objectivepoints = INVALID_HANDLE;
 new Handle:sm_stats_start_at_avg = INVALID_HANDLE;
 
 new clientPoints[MAXPLAYERS+1];
@@ -91,7 +91,7 @@ public OnPluginStart()
 	sm_stats_tkpoints = CreateConVar("sm_stats_tkpoints", "-20", "Points to award for killing a teammate");
 	sm_stats_headshot_bonus = CreateConVar("sm_stats_headshot_bonus", "1", "Bonus points to award for headshots on top of sm_stats_killpoints");
 	sm_stats_extractionpoints = CreateConVar("sm_stats_extractionpoints", "10", "Points to award for getting extracted");
-	sm_stats_objectivepoints = CreateConVar("sm_stats_objectivepoints", "5", "Points to award team for completing an objective");
+	//sm_stats_objectivepoints = CreateConVar("sm_stats_objectivepoints", "5", "Points to award team for completing an objective");
 	sm_stats_start_at_avg = CreateConVar("sm_stats_start_at_avg", "1", "New players start with the average of all player scores (0 = players start at 0)", _, true, 0.0, true, 1.0);
 
 	AutoExecConfig(true, "nmrihstats");
@@ -110,7 +110,7 @@ public OnPluginStart()
 	HookEvent("zombie_killed_by_fire", Event_ZombieKilledByFire);
 	HookEvent("zombie_head_split", Event_ZombieHeadSplit);
 	HookEvent("player_extracted", Event_PlayerExtracted);
-	HookEvent("objective_complete", Event_ObjectiveComplete);
+	//HookEvent("objective_complete", Event_ObjectiveComplete);
 	HookEvent("player_changename", Event_ChangeName);
 	
 	ConnectDatabase();
@@ -622,7 +622,7 @@ public Action:Event_PlayerExtracted(Handle:event, const String:name[], bool:dont
 	return Plugin_Continue;
 }
 
-public Action:Event_ObjectiveComplete(Handle:event, const String:name[], bool:dontBroadcast)
+/*public Action:Event_ObjectiveComplete(Handle:event, const String:name[], bool:dontBroadcast)
 {
 #if defined DEBUG
 	new id = GetEventInt(event, "id");
@@ -655,7 +655,7 @@ public Action:Event_ObjectiveComplete(Handle:event, const String:name[], bool:do
 	}
 	
 	return Plugin_Continue;
-}
+}*/
 
 public Action:Event_ChangeName(Handle:event, const String:name[], bool:dontBroadcast)
 {
