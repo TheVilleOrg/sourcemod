@@ -400,7 +400,7 @@ public Action:Command_SetPoints(client, args)
 		{
 			GetClientAuthString(targets[i], auth, sizeof(auth));
 			SetPoints(auth, points);
-			clientPoints[i] = points;
+			clientPoints[targets[i]] = points;
 		}
 	}
 	
