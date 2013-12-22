@@ -10,41 +10,47 @@
 * Default Configuration:
 * 	- Zombie kill: +1
 * 	- Headshot bonus: +1
-* 	- Death: -10
+* 	- Death: -20
 * 	- Team kill: -20
-* 	- Extraction: +10
-* 	- Objective complete: +5
+* 	- Extraction: +50
 * 
 * 
 * Changelog
+* Dec 22, 2013 - v.0.5:
+* 	[+] Added sm_stats_start_at_avg ConVar to toggle players starting at the
+* 		average or 0
+*	[*] Players cannot start with negative points
+*	[*] Fixed bug with sm_stats_setpoints targetting
+*	[-] Disabled reward for objectives due to game event unreliability
+*	[*] Adjusted default reward values (-20 for death, +50 for extraction)
 * Dec 11, 2013 - v.0.4:
-* 				[+] Added commands to set players' point values manually
-*				[+] Added command to reset the stats database
-*				[-] Removed sm_stats_startpoints ConVar
-*				[*] New players now start at the average score of all players
-*				[*] Fixed server being able to call rank and top10 commands
-*				[*] Fixed plugin overriding database changes from other sources
+* 	[+] Added commands to set players' point values manually
+*	[+] Added command to reset the stats database
+*	[-] Removed sm_stats_startpoints ConVar
+*	[*] New players now start at the average score of all players
+*	[*] Fixed server being able to call rank and top10 commands
+*	[*] Fixed plugin overriding database changes from other sources
 * Dec 01, 2013 - v.0.3:
-* 				[+] Added detection of fire kills
-*				[+] Added headshot bonus
-*				[+] Added point award for getting extracted
-*				[+] Added team point award for completing an objective
-*				[+] Added chat triggers for rank and top10
+* 	[+] Added detection of fire kills
+*	[+] Added headshot bonus
+*	[+] Added point award for getting extracted
+*	[+] Added team point award for completing an objective
+*	[+] Added chat triggers for rank and top10
 * Nov 27, 2013 - v.0.2:
-* 				[+] Added sm_stats_startpoints ConVar
-* 				[+] Added stat notifications in players' chat area
-* 				[*] Fixed race condition with database connection
-* 				[*] Only updates names when needed
-* 				[*] Only allows loading on NMRiH
+* 	[+] Added sm_stats_startpoints ConVar
+* 	[+] Added stat notifications in players' chat area
+* 	[*] Fixed race condition with database connection
+* 	[*] Only updates names when needed
+* 	[*] Only allows loading on NMRiH
 * Nov 25, 2013 - v.0.1:
-* 				[*] Initial Release
+* 	[*] Initial Release
 * 
 */
 
 #pragma semicolon 1
 #include <sourcemod>
 
-#define PLUGIN_VERSION "0.4"
+#define PLUGIN_VERSION "0.5"
 //#define DEBUG
 
 public Plugin:myinfo = 
