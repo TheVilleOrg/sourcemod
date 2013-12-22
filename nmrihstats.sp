@@ -491,6 +491,9 @@ public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroa
 	if(attacker != 0 && attacker != client && !IsFakeClient(attacker) && IsClientAuthorized(attacker))
 	{
 		new change = GetConVarInt(sm_stats_tkpoints);
+		if(change == 0)
+			return Plugin_Continue;
+		
 		clientPoints[attacker] += change;
 		
 		PrintToChat(attacker, "\x04[Stats]\x01 %s%d point%s (%d) for killing a teammate!", (change >= 0 ? "+" : ""), change, (change != -1 && change != 1 ? "s" : ""), clientPoints[attacker]);
@@ -573,6 +576,9 @@ public Action:Event_ZombieHeadSplit(Handle:event, const String:name[], bool:dont
 		return Plugin_Continue;
 	
 	new change = GetConVarInt(sm_stats_headshot_bonus);
+	if(change == 0)
+		return Plugin_Continue;
+	
 	clientPoints[client] += change;
 	
 	clientKillPointsSinceNotify[client] += change;
@@ -597,6 +603,9 @@ public Action:Event_PlayerExtracted(Handle:event, const String:name[], bool:dont
 		return Plugin_Continue;
 	
 	new change = GetConVarInt(sm_stats_extractionpoints);
+	if(change == 0)
+		return Plugin_Continue;
+	
 	clientPoints[client] += change;
 	
 	PrintToChat(client, "\x04[Stats]\x01 %s%d point%s (%d) for getting extracted", (change >= 0 ? "+" : ""), change, (change != -1 && change != 1 ? "s" : ""), clientPoints[client]);
@@ -616,6 +625,9 @@ public Action:Event_PlayerExtracted(Handle:event, const String:name[], bool:dont
 public Action:Event_ObjectiveComplete(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	new change = GetConVarInt(sm_stats_objectivepoints);
+	if(change == 0)
+		return Plugin_Continue;
+	
 	for(new i = 1; i <= MaxClients; i++)
 	{
 		if(!IsClientAuthorized(i) || !IsClientInGame(i) || IsFakeClient(i) || !IsPlayerAlive(i))
