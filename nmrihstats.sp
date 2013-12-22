@@ -624,6 +624,13 @@ public Action:Event_PlayerExtracted(Handle:event, const String:name[], bool:dont
 
 public Action:Event_ObjectiveComplete(Handle:event, const String:name[], bool:dontBroadcast)
 {
+#if defined DEBUG
+	new id = GetEventInt(event, "id");
+	decl String:objname[64];
+	GetEventString(event, "name", objname, sizeof(objname));
+	LogMessage("Objective Complete: id = %d name = %s", id, objname);
+#endif
+
 	new change = GetConVarInt(sm_stats_objectivepoints);
 	if(change == 0)
 		return Plugin_Continue;
