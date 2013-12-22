@@ -87,10 +87,10 @@ public OnPluginStart()
 	
 	CreateConVar("sm_nmrihstats_version", PLUGIN_VERSION, "Simple NMRiH Stats version", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	sm_stats_killpoints = CreateConVar("sm_stats_killpoints", "1", "Points to award for a zombie kill");
-	sm_stats_deathpoints = CreateConVar("sm_stats_deathpoints", "-10", "Points to award for getting killed");
+	sm_stats_deathpoints = CreateConVar("sm_stats_deathpoints", "-20", "Points to award for getting killed");
 	sm_stats_tkpoints = CreateConVar("sm_stats_tkpoints", "-20", "Points to award for killing a teammate");
 	sm_stats_headshot_bonus = CreateConVar("sm_stats_headshot_bonus", "1", "Bonus points to award for headshots on top of sm_stats_killpoints");
-	sm_stats_extractionpoints = CreateConVar("sm_stats_extractionpoints", "10", "Points to award for getting extracted");
+	sm_stats_extractionpoints = CreateConVar("sm_stats_extractionpoints", "50", "Points to award for getting extracted");
 	//sm_stats_objectivepoints = CreateConVar("sm_stats_objectivepoints", "5", "Points to award team for completing an objective");
 	sm_stats_start_at_avg = CreateConVar("sm_stats_start_at_avg", "1", "New players start with the average of all player scores (0 = players start at 0)", _, true, 0.0, true, 1.0);
 
