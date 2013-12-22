@@ -210,6 +210,9 @@ public T_AddPlayer(Handle:owner, Handle:hndl, const String:error[], any:client)
 		if(SQL_FetchRow(hndl))
 		{
 			new points = SQL_FetchInt(hndl, 0);
+			if(points < 0)
+				points = 0;
+			
 			AddPlayer(client, points);
 		}
 	}
