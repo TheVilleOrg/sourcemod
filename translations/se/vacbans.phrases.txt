@@ -1,15 +1,15 @@
-"Phrases"
+ï»¿"Phrases"
 {
 	"Kicked"
 	{
-		"se"		"Du blev kickad tack var en tidigare VAC överträdelse."
+		"se"		"Du blev kickad tack var en tidigare VAC Ã¶vertrÃ¤delse."
 	}
 	"Banned"
 	{
-		"se"		"Du blev bannad tack vare en tidigare VAC överträdelse."
+		"se"		"Du blev bannad tack vare en tidigare VAC Ã¶vertrÃ¤delse."
 	}
 	"Banned_Server"
 	{
-		"se"		"bannad tack vare en tidigare VAC överträdelse."
+		"se"		"bannad tack vare en tidigare VAC Ã¶vertrÃ¤delse."
 	}
 }

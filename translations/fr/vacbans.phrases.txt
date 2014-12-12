@@ -1,15 +1,15 @@
-"Phrases"
+ï»¿"Phrases"
 {
 	"Kicked"
 	{
-		"fr"		"Vous avez été kické par le VAC pour une triche antérieure."
+		"fr"		"Vous avez Ã©tÃ© kickÃ© par le VAC pour une triche antÃ©rieure."
 	}
 	"Banned"
 	{
-		"fr"		"Vous avez été banni par le VAC pour une triche antérieure."
+		"fr"		"Vous avez Ã©tÃ© banni par le VAC pour une triche antÃ©rieure."
 	}
 	"Banned_Server"
 	{
-		"fr"		"banni pour une violation antérieure du VAC."
+		"fr"		"banni pour une violation antÃ©rieure du VAC."
 	}
 }
