@@ -23,6 +23,8 @@
 *   Archangel_Dm - Russian translation
 *   lhffan - Swedish translation
 *   ZuCChiNi - Turkish translation
+*   allienaded - Finnish translation
+*   Wilczek - Polish translation
 * 
 * Changelog
 * Nov 15, 2013 - v.1.3.6:
