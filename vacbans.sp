@@ -27,6 +27,8 @@
 *   Wilczek - Polish translation
 * 
 * Changelog
+* Feb 06, 2015 - v.1.4.0:
+*               [*] Updated to support SourceMod 1.7
 * Nov 15, 2013 - v.1.3.6:
 *               [*] Fixed DataPack operation out of bounds errors
 * Mar 27, 2013 - v.1.3.5:
@@ -68,7 +70,7 @@
 #include <sourcemod>
 #include <socket>
 
-#define PLUGIN_VERSION "1.3.6"
+#define PLUGIN_VERSION "1.4.0"
 
 public Plugin:myinfo = 
 {
@@ -111,18 +113,15 @@ public OnClientPostAdminCheck(client)
 	if(!IsFakeClient(client))
 	{
 		decl String:query[1024];
-		decl String:steamID[64];
-		decl String:friendID[32];
+		decl String:steamID[32];
 		
-		GetClientAuthString(client, steamID, sizeof(steamID));
-		
-		if(GetFriendID(steamID, friendID, sizeof(friendID)))
+		if(GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID)))
 		{
 			new Handle:hPack = CreateDataPack();
 			WritePackCell(hPack, client);
-			WritePackString(hPack, friendID);
+			WritePackString(hPack, steamID);
 			
-			Format(query, sizeof(query), "SELECT * FROM `vacbans` WHERE `steam_id` = '%s' AND (`expire` > %d OR `expire` = 0) LIMIT 1;", friendID, GetTime());
+			Format(query, sizeof(query), "SELECT * FROM `vacbans` WHERE `steam_id` = '%s' AND (`expire` > %d OR `expire` = 0) LIMIT 1;", steamID, GetTime());
 			SQL_TQuery(hDatabase, T_PlayerLookup, query, hPack);
 		}
 	}
@@ -297,10 +296,8 @@ HandleClient(client, const String:friendID[], bool:vacBanned)
 	if(IsClientAuthorized(client))
 	{
 		// Check to make sure this is the same client that originally connected
-		decl String:steamID[64];
-		GetClientAuthString(client, steamID, sizeof(steamID));
 		decl String:clientFriendID[32];
-		if(!GetFriendID(steamID, clientFriendID, sizeof(clientFriendID)) || !StrEqual(friendID, clientFriendID))
+		if(!GetClientAuthId(client, AuthId_SteamID64, clientFriendID, sizeof(clientFriendID)) || !StrEqual(friendID, clientFriendID))
 		{
 			return;
 		}
