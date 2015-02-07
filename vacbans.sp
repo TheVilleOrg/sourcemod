@@ -27,8 +27,9 @@
 *   Wilczek - Polish translation
 * 
 * Changelog
-* Feb 06, 2015 - v.1.4.0:
+* Feb 07, 2015 - v.1.4.0:
 *               [*] Updated to support SourceMod 1.7
+*               [*] Fixed DataPack operation out of bounds errors
 * Nov 15, 2013 - v.1.3.6:
 *               [*] Fixed DataPack operation out of bounds errors
 * Mar 27, 2013 - v.1.3.5:
@@ -132,7 +133,9 @@ public OnSocketConnected(Handle:hSock, any:hPack)
 	new String:friendID[32];
 	decl String:requestStr[128];
 	
-	SetPackPosition(hPack, 16);
+	ResetPack(hPack);
+	ReadPackCell(hPack);
+	ReadPackCell(hPack);
 	ReadPackString(hPack, friendID, sizeof(friendID));
 	
 	Format(requestStr, sizeof(requestStr), "GET /profiles/%s?xml=1 HTTP/1.0\r\nHost: %s\r\nConnection: close\r\n\r\n", friendID, "steamcommunity.com");
@@ -144,7 +147,8 @@ public OnSocketConnected2(Handle:hSock, any:hPack)
 	decl String:redirURL[64];
 	decl String:requestStr[512];
 	
-	SetPackPosition(hPack, 8);
+	ResetPack(hPack);
+	ReadPackCell(hPack);
 	new Handle:hData = Handle:ReadPackCell(hPack);
 	
 	ResetPack(hData);
@@ -157,7 +161,8 @@ public OnSocketConnected2(Handle:hSock, any:hPack)
 
 public OnSocketReceive(Handle:hSock, String:receiveData[], const dataSize, any:hPack)
 {
-	SetPackPosition(hPack, 8);
+	ResetPack(hPack);
+	ReadPackCell(hPack);
 	new Handle:hData = Handle:ReadPackCell(hPack);
 	
 	WritePackString(hData, receiveData);
