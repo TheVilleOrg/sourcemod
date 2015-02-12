@@ -260,7 +260,7 @@ public Action:Command_Whitelist(client, args)
 					Format(query, sizeof(query), "REPLACE INTO `vacbans` VALUES('%s', '0', '0');", friendID);
 					SQL_TQuery(hDatabase, T_FastQuery, query);
 					
-					ReplyToCommand(client, "[SM] STEAM_%s added to the VAC Status Checker whitelist.", steamID);
+					ReplyToCommand(client, "[SM] %s added to the VAC Status Checker whitelist.", steamID);
 					
 					return Plugin_Handled;
 				}
@@ -269,7 +269,7 @@ public Action:Command_Whitelist(client, args)
 					Format(query, sizeof(query), "DELETE FROM `vacbans` WHERE `steam_id` = '%s';", friendID);
 					SQL_TQuery(hDatabase, T_FastQuery, query);
 					
-					ReplyToCommand(client, "[SM] STEAM_%s removed from the VAC Status Checker whitelist.", steamID);
+					ReplyToCommand(client, "[SM] %s removed from the VAC Status Checker whitelist.", steamID);
 					
 					return Plugin_Handled;
 				}
@@ -342,23 +342,37 @@ HandleClient(client, const String:friendID[], bool:vacBanned)
 
 bool:GetFriendID(String:AuthID[], String:FriendID[], size)
 {
-	ReplaceString(AuthID, strlen(AuthID), "STEAM_", "");
-	if (StrEqual(AuthID, "ID_LAN"))
+	decl String:toks[3][18];
+	ExplodeString(AuthID, ":", toks, sizeof(toks), sizeof(toks[]));
+	new iFriendID;
+	if(StrEqual(toks[0], "STEAM_0", false))
+	{
+		new iServer = StringToInt(toks[1]);
+		new iAuthID = StringToInt(toks[2]);
+		iFriendID = (iAuthID*2) + 60265728 + iServer;
+	}
+	else if(StrEqual(toks[0], "[U", false))
+	{
+		ReplaceString(toks[2], sizeof(toks[]), "]", "");
+		new iAuthID = StringToInt(toks[2]);
+		iFriendID = iAuthID + 60265728;
+	}
+	else if(strlen(toks[0]) == 17 && IsCharNumeric(toks[0][0]))
+	{
+		strcopy(FriendID, size, AuthID);
+		return true;
+	}
+	else
 	{
 		FriendID[0] = '\0';
 		return false;
 	}
-	decl String:toks[3][16];
-	new upper = 765611979;
-	new String:temp[12], String:carry[12];
-
-	ExplodeString(AuthID, ":", toks, sizeof(toks), sizeof(toks[]));
-	new iServer = StringToInt(toks[1]);
-	new iAuthID = StringToInt(toks[2]);
-	new iFriendID = (iAuthID*2) + 60265728 + iServer;
 
 	if (iFriendID >= 100000000)
 	{
+		new upper = 765611979;
+		new String:temp[12], String:carry[12];
+		
 		Format(temp, sizeof(temp), "%d", iFriendID);
 		Format(carry, 2, "%s", temp);
 		new icarry = StringToInt(carry[0]);
