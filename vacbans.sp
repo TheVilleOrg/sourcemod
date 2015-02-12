@@ -25,8 +25,12 @@
 *   ZuCChiNi - Turkish translation
 *   allienaded - Finnish translation
 *   Wilczek - Polish translation
+*   r3dw3r3w0lf - admin alert code
 * 
 * Changelog
+* Feb 12, 2015 - v.1.4.1:
+*               [*] Updated sm_vacbans_whitelist to accept new SteamIDs
+*               [+] Added option to alert admins to VAC banned players
 * Feb 07, 2015 - v.1.4.0:
 *               [*] Updated to support SourceMod 1.7
 *               [*] Fixed DataPack operation out of bounds errors
@@ -71,7 +75,7 @@
 #include <sourcemod>
 #include <socket>
 
-#define PLUGIN_VERSION "1.4.0"
+#define PLUGIN_VERSION "1.4.1"
 
 public Plugin:myinfo = 
 {
