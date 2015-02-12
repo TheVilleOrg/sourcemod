@@ -343,19 +343,27 @@ HandleClient(client, const String:friendID[], bool:vacBanned)
 bool:GetFriendID(String:AuthID[], String:FriendID[], size)
 {
 	decl String:toks[3][18];
-	ExplodeString(AuthID, ":", toks, sizeof(toks), sizeof(toks[]));
+	new parts = ExplodeString(AuthID, ":", toks, sizeof(toks), sizeof(toks[]));
 	new iFriendID;
-	if(StrEqual(toks[0], "STEAM_0", false))
+	if(parts == 3)
 	{
-		new iServer = StringToInt(toks[1]);
-		new iAuthID = StringToInt(toks[2]);
-		iFriendID = (iAuthID*2) + 60265728 + iServer;
-	}
-	else if(StrEqual(toks[0], "[U", false))
-	{
-		ReplaceString(toks[2], sizeof(toks[]), "]", "");
-		new iAuthID = StringToInt(toks[2]);
-		iFriendID = iAuthID + 60265728;
+		if(StrContains(toks[0], "STEAM_", false) >= 0)
+		{
+			new iServer = StringToInt(toks[1]);
+			new iAuthID = StringToInt(toks[2]);
+			iFriendID = (iAuthID*2) + 60265728 + iServer;
+		}
+		else if(StrEqual(toks[0], "[U", false))
+		{
+			ReplaceString(toks[2], sizeof(toks[]), "]", "");
+			new iAuthID = StringToInt(toks[2]);
+			iFriendID = iAuthID + 60265728;
+		}
+		else
+		{
+			FriendID[0] = '\0';
+			return false;
+		}
 	}
 	else if(strlen(toks[0]) == 17 && IsCharNumeric(toks[0][0]))
 	{
