@@ -93,7 +93,7 @@ public OnPluginStart()
 	CreateConVar("sm_vacbans_version", PLUGIN_VERSION, "VAC Ban Checker plugin version", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	sm_vacbans_db = CreateConVar("sm_vacbans_db", "storage-local", "The named database config to use for caching");
 	sm_vacbans_cachetime = CreateConVar("sm_vacbans_cachetime", "30", "How long in days before re-checking the same client for VAC status", _, true, 0.0);
-	sm_vacbans_action = CreateConVar("sm_vacbans_action", "0", "Action to take on VAC banned clients (0 = ban, 1 = kick, 2 = log to file)", _, true, 0.0, true, 2.0);
+	sm_vacbans_action = CreateConVar("sm_vacbans_action", "0", "Action to take on VAC banned clients (0 = ban, 1 = kick, 2 = alert admins, 3 = log only)", _, true, 0.0, true, 3.0);
 	AutoExecConfig(true, "vacbans");
 	
 	RegConsoleCmd("sm_vacbans_reset", Command_Reset);
@@ -326,7 +326,17 @@ HandleClient(client, const String:friendID[], bool:vacBanned)
 				}
 				case 1:
 				{
-					KickClient(client, "[VAC Bans] %t", "Kicked");
+					KickClient(client, "[VAC Status Checker] %t", "Kicked");
+				}
+				case 2:
+				{
+					for (new i = 1; i <= MaxClients; i++)
+					{
+						if (IsClientInGame(i) && !IsFakeClient(i) && CheckCommandAccess(i, "sm_listvac", ADMFLAG_BAN))
+						{
+							PrintToChat(i, "[VAC Status Checker] %s has VAC bans on record.", client);
+						}
+					}
 				}
 			}
 			decl String:path[PLATFORM_MAX_PATH];
