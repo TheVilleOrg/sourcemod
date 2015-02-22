@@ -28,6 +28,9 @@
 *   r3dw3r3w0lf - admin alert code
 * 
 * Changelog
+* Feb 22, 2015 - v.1.4.2:
+*               [*] Fixed handling of incorrect usage of sm_vacbans_whitelist
+*               [*] Changed console commands to admin commands
 * Feb 12, 2015 - v.1.4.1:
 *               [*] Updated sm_vacbans_whitelist to accept new SteamIDs
 *               [+] Added option to alert admins to VAC banned players
@@ -75,7 +78,7 @@
 #include <sourcemod>
 #include <socket>
 
-#define PLUGIN_VERSION "1.4.1"
+#define PLUGIN_VERSION "1.4.2"
 
 public Plugin:myinfo = 
 {
