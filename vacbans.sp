@@ -100,8 +100,8 @@ public OnPluginStart()
 	sm_vacbans_action = CreateConVar("sm_vacbans_action", "0", "Action to take on VAC banned clients (0 = ban, 1 = kick, 2 = alert admins, 3 = log only)", _, true, 0.0, true, 3.0);
 	AutoExecConfig(true, "vacbans");
 	
-	RegConsoleCmd("sm_vacbans_reset", Command_Reset);
-	RegConsoleCmd("sm_vacbans_whitelist", Command_Whitelist);
+	RegAdminCmd("sm_vacbans_reset", Command_Reset, ADMFLAG_RCON, "Clears the local vacbans SQLite database");
+	RegAdminCmd("sm_vacbans_whitelist", Command_Whitelist, ADMFLAG_RCON, "Controls the vacbans whitelist");
 	
 	LoadTranslations("vacbans.phrases");
 }
@@ -232,66 +232,60 @@ public OnSocketError(Handle:hSock, const errorType, const errorNum, any:hPack)
 
 public Action:Command_Reset(client, args)
 {
-	if(client == 0 || ((GetUserFlagBits(client) & ADMFLAG_RCON) == ADMFLAG_RCON))
-	{
-		SQL_FastQuery(hDatabase, "DELETE FROM `vacbans` WHERE `expire` != 0;");
-		ReplyToCommand(client, "[SM] Local VAC Status Checker cache has been reset.");
-	}
+	SQL_FastQuery(hDatabase, "DELETE FROM `vacbans` WHERE `expire` != 0;");
+	ReplyToCommand(client, "[SM] Local VAC Status Checker cache has been reset.");
 	return Plugin_Handled;
 }
 
 public Action:Command_Whitelist(client, args)
 {
-	if(client == 0 || ((GetUserFlagBits(client) & ADMFLAG_RCON) == ADMFLAG_RCON))
+	decl String:argString[72];
+	decl String:action[8];
+	decl String:steamID[64];
+	decl String:friendID[64];
+	
+	GetCmdArgString(argString, sizeof(argString));
+	new pos = BreakString(argString, action, sizeof(action));
+	if(pos > -1)
 	{
-		decl String:argString[72];
-		decl String:action[8];
-		decl String:steamID[64];
-		decl String:friendID[64];
+		strcopy(steamID, sizeof(steamID), argString[pos]);
 		
-		GetCmdArgString(argString, sizeof(argString));
-		new pos = BreakString(argString, action, sizeof(action));
-		if(pos > -1)
+		if(GetFriendID(steamID, friendID, sizeof(friendID)))
 		{
-			strcopy(steamID, sizeof(steamID), argString[pos]);
-			
-			if(GetFriendID(steamID, friendID, sizeof(friendID)))
+			decl String:query[1024];
+			if(StrEqual(action, "add"))
 			{
-				decl String:query[1024];
-				if(StrEqual(action, "add"))
-				{
-					Format(query, sizeof(query), "REPLACE INTO `vacbans` VALUES('%s', '0', '0');", friendID);
-					SQL_TQuery(hDatabase, T_FastQuery, query);
-					
-					ReplyToCommand(client, "[SM] %s added to the VAC Status Checker whitelist.", steamID);
-					
-					return Plugin_Handled;
-				}
-				if(StrEqual(action, "remove"))
-				{
-					Format(query, sizeof(query), "DELETE FROM `vacbans` WHERE `steam_id` = '%s';", friendID);
-					SQL_TQuery(hDatabase, T_FastQuery, query);
-					
-					ReplyToCommand(client, "[SM] %s removed from the VAC Status Checker whitelist.", steamID);
-					
-					return Plugin_Handled;
-				}
-			}
-		}
-		else
-		{
-			if(StrEqual(action, "clear"))
-			{
-				SQL_TQuery(hDatabase, T_FastQuery, "DELETE FROM `vacbans` WHERE `expire` = 0;");
+				Format(query, sizeof(query), "REPLACE INTO `vacbans` VALUES('%s', '0', '0');", friendID);
+				SQL_TQuery(hDatabase, T_FastQuery, query);
 				
-				ReplyToCommand(client, "[SM] VAC Status Checker whitelist cleared.");
+				ReplyToCommand(client, "[SM] %s added to the VAC Status Checker whitelist.", steamID);
+				
+				return Plugin_Handled;
+			}
+			if(StrEqual(action, "remove"))
+			{
+				Format(query, sizeof(query), "DELETE FROM `vacbans` WHERE `steam_id` = '%s';", friendID);
+				SQL_TQuery(hDatabase, T_FastQuery, query);
+				
+				ReplyToCommand(client, "[SM] %s removed from the VAC Status Checker whitelist.", steamID);
 				
 				return Plugin_Handled;
 			}
 		}
-		
-		ReplyToCommand(client, "Usage: sm_vacbans_whitelist <add|remove|clear> [SteamID]");
 	}
+	else
+	{
+		if(StrEqual(action, "clear"))
+		{
+			SQL_TQuery(hDatabase, T_FastQuery, "DELETE FROM `vacbans` WHERE `expire` = 0;");
+			
+			ReplyToCommand(client, "[SM] VAC Status Checker whitelist cleared.");
+			
+			return Plugin_Handled;
+		}
+	}
+	
+	ReplyToCommand(client, "Usage: sm_vacbans_whitelist <add|remove|clear> [SteamID]");
 	return Plugin_Handled;
 }
 
