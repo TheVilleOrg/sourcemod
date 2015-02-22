@@ -244,17 +244,16 @@ public Action:Command_Whitelist(client, args)
 {
 	if(client == 0 || ((GetUserFlagBits(client) & ADMFLAG_RCON) == ADMFLAG_RCON))
 	{
-		if(args >= 2)
+		decl String:argString[72];
+		decl String:action[8];
+		decl String:steamID[64];
+		decl String:friendID[64];
+		
+		GetCmdArgString(argString, sizeof(argString));
+		new pos = BreakString(argString, action, sizeof(action));
+		if(pos > -1)
 		{
-			decl String:argString[72];
-			decl String:action[8];
-			decl String:steamID[64];
-			decl String:friendID[64];
-			
-			GetCmdArgString(argString, sizeof(argString));
-			new pos = BreakString(argString, action, sizeof(action));
 			strcopy(steamID, sizeof(steamID), argString[pos]);
-			
 			
 			if(GetFriendID(steamID, friendID, sizeof(friendID)))
 			{
@@ -279,12 +278,8 @@ public Action:Command_Whitelist(client, args)
 				}
 			}
 		}
-		else if(args == 1)
+		else
 		{
-			decl String:action[8];
-			
-			GetCmdArg(1, action, sizeof(action));
-			
 			if(StrEqual(action, "clear"))
 			{
 				SQL_TQuery(hDatabase, T_FastQuery, "DELETE FROM `vacbans` WHERE `expire` = 0;");
