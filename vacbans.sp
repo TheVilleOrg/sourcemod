@@ -28,6 +28,8 @@
 *   r3dw3r3w0lf - admin alert code
 * 
 * Changelog
+* Mar 08, 2015 - v.1.4.3:
+*               [*] Fixed missing client name in admin messages
 * Feb 22, 2015 - v.1.4.2:
 *               [*] Fixed handling of incorrect usage of sm_vacbans_whitelist
 *               [*] Changed console commands to admin commands
@@ -78,7 +80,7 @@
 #include <sourcemod>
 #include <socket>
 
-#define PLUGIN_VERSION "1.4.2"
+#define PLUGIN_VERSION "1.4.3"
 
 public Plugin:myinfo = 
 {
