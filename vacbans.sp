@@ -330,7 +330,7 @@ HandleClient(client, const String:friendID[], bool:vacBanned)
 					{
 						if (IsClientInGame(i) && !IsFakeClient(i) && CheckCommandAccess(i, "sm_listvac", ADMFLAG_BAN))
 						{
-							PrintToChat(i, "[VAC Status Checker] %s has VAC bans on record.", client);
+							PrintToChat(i, "[VAC Status Checker] %N has VAC bans on record.", client);
 						}
 					}
 				}
