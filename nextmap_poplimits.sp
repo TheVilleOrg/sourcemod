@@ -240,6 +240,10 @@ void ReadMapCycle()
 			
 			// add map name
 			TrimString(entry[0]);
+			
+			if (!IsMapValid(entry[0]))
+				continue;
+			
 			g_MapList.PushString(entry[0]);
 			
 			// add population limits for map entry
