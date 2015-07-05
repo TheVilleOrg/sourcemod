@@ -346,11 +346,11 @@ bool DisablePlugin(const char[] file)
 	BuildPath(Path_SM, sOldPath, sizeof(sOldPath), "plugins/%s.smx", file);
 	
 	// If plugins/<file>.smx does not exist, ignore
-	if(!FileExists(sOldPath))
+	if (!FileExists(sOldPath))
 		return false;
 	
 	// If plugins/disabled/<file>.smx exists, delete it
-	if(FileExists(sNewPath))
+	if (FileExists(sNewPath))
 		DeleteFile(sNewPath);
 	
 	// Unload plugins/<file>.smx and move it to plugins/disabled/<file>.smx
