@@ -14,6 +14,8 @@
 * 				[+] Added path cvar to control where demos are stored
 * 				[*] Changed manual recording to override automatic recording
 * 				[+] Added seconds to demo names
+* May 04, 2016 - v.1.1.1:
+*               [*] Changed demo file names to replace slashes with hyphens [ajmadsen]
 * 
 */
 
