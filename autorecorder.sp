@@ -20,7 +20,7 @@
 #pragma semicolon 1
 #include <sourcemod>
 
-#define PLUGIN_VERSION "1.1.0"
+#define PLUGIN_VERSION "1.1.1"
 
 new Handle:g_hTvEnabled = INVALID_HANDLE;
 new Handle:g_hAutoRecord = INVALID_HANDLE;
@@ -179,6 +179,9 @@ public StartRecord()
 		GetConVarString(g_hDemoPath, sPath, sizeof(sPath));
 		FormatTime(sTime, sizeof(sTime), "%Y%m%d-%H%M%S", GetTime());
 		GetCurrentMap(sMap, sizeof(sMap));
+		
+		// replace slashes in map path name with dashes, to prevent fail on workshop maps
+		ReplaceString(sMap, sizeof(sMap), "/", "-", false);		
 		
 		ServerCommand("tv_record \"%s/auto-%s-%s\"", sPath, sTime, sMap);
 		g_bIsRecording = true;
