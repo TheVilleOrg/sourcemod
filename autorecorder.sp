@@ -16,17 +16,22 @@
 * 				[+] Added seconds to demo names
 * May 04, 2016 - v.1.1.1:
 *               [*] Changed demo file names to replace slashes with hyphens [ajmadsen]
+* Aug 26, 2016 - v.1.2.0:
+* 				[*] Now ignores bots in the player count by default
+* 				[*] The SourceTV client is now always ignored in the player count
+* 				[+] Added sm_autorecord_ignorebots to control whether to ignore bots
 * 
 */
 
 #pragma semicolon 1
 #include <sourcemod>
 
-#define PLUGIN_VERSION "1.1.1"
+#define PLUGIN_VERSION "1.2.0"
 
 new Handle:g_hTvEnabled = INVALID_HANDLE;
 new Handle:g_hAutoRecord = INVALID_HANDLE;
 new Handle:g_hMinPlayersStart = INVALID_HANDLE;
+new Handle:g_hIgnoreBots = INVALID_HANDLE;
 new Handle:g_hTimeStart = INVALID_HANDLE;
 new Handle:g_hTimeStop = INVALID_HANDLE;
 new Handle:g_hFinishMap = INVALID_HANDLE;
@@ -50,6 +55,7 @@ public OnPluginStart()
 	
 	g_hAutoRecord = CreateConVar("sm_autorecord_enable", "1", "Enable automatic recording", _, true, 0.0, true, 1.0);
 	g_hMinPlayersStart = CreateConVar("sm_autorecord_minplayers", "4", "Minimum players on server to start recording", _, true, 0.0);
+	g_hIgnoreBots = CreateConVar("sm_autorecord_ignorebots", "1", "Ignore bots in the player count", _, true, 0.0, true, 1.0);
 	g_hTimeStart = CreateConVar("sm_autorecord_timestart", "-1", "Hour in the day to start recording (0-23, -1 disables)");
 	g_hTimeStop = CreateConVar("sm_autorecord_timestop", "-1", "Hour in the day to stop recording (0-23, -1 disables)");
 	g_hFinishMap = CreateConVar("sm_autorecord_finishmap", "1", "If 1, continue recording until the map ends", _, true, 0.0, true, 1.0);
@@ -151,7 +157,6 @@ public CheckStatus()
 	if(GetConVarBool(g_hAutoRecord) && !g_bIsManual)
 	{
 		new iMinClients = GetConVarInt(g_hMinPlayersStart);
-		new iNumClients = GetClientCount(true);
 		
 		new iTimeStart = GetConVarInt(g_hTimeStart);
 		new iTimeStop = GetConVarInt(g_hTimeStop);
@@ -161,7 +166,7 @@ public CheckStatus()
 		FormatTime(sCurrentTime, sizeof(sCurrentTime), "%H", GetTime());
 		new iCurrentTime = StringToInt(sCurrentTime);
 		
-		if(iNumClients >= iMinClients+1 && (iTimeStart < 0 || (iCurrentTime >= iTimeStart && (bReverseTimes || iCurrentTime < iTimeStop))))
+		if(GetPlayerCount() >= iMinClients+1 && (iTimeStart < 0 || (iCurrentTime >= iTimeStart && (bReverseTimes || iCurrentTime < iTimeStop))))
 		{
 			StartRecord();
 		}
@@ -170,6 +175,28 @@ public CheckStatus()
 			StopRecord();
 		}
 	}
+}
+
+public GetPlayerCount()
+{
+	new bool:bIgnoreBots = GetConVarBool(g_hIgnoreBots);
+	new iNumClients = GetClientCount(false)-1;
+
+	if(!bIgnoreBots)
+	{
+		return iNumClients;
+	}
+
+	new iNumPlayers = 0;
+	for(new i = i; i < iNumClients; i++)
+	{
+		if(!IsFakeClient(i))
+		{
+			iNumPlayers++;
+		}
+	}
+
+	return iNumPlayers;
 }
 
 public StartRecord()
