@@ -202,7 +202,7 @@ public GetPlayerCount()
 	new iNumPlayers = 0;
 	for(new i = i; i < iNumClients; i++)
 	{
-		if(!IsFakeClient(i))
+		if(IsClientConnected(i) && !IsFakeClient(i))
 		{
 			iNumPlayers++;
 		}
