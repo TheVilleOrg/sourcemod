@@ -20,6 +20,7 @@
 * 				[*] Now ignores bots in the player count by default
 * 				[*] The SourceTV client is now always ignored in the player count
 * 				[+] Added sm_autorecord_ignorebots to control whether to ignore bots
+* 				[*] Now checks the status of the server immediately when a setting is changed
 * 
 */
 
@@ -75,6 +76,10 @@ public OnPluginStart()
 		InitDirectory(sPath);
 	}
 	
+	HookConVarChange(g_hMinPlayersStart, OnConVarChanged);
+	HookConVarChange(g_hIgnoreBots, OnConVarChanged);
+	HookConVarChange(g_hTimeStart, OnConVarChanged);
+	HookConVarChange(g_hTimeStop, OnConVarChanged);
 	HookConVarChange(g_hDemoPath, OnConVarChanged);
 	
 	CreateTimer(300.0, Timer_CheckStatus, _, TIMER_REPEAT);
@@ -85,9 +90,16 @@ public OnPluginStart()
 
 public OnConVarChanged(Handle:convar, const String:oldValue[], const String:newValue[])
 {
-	if(!DirExists(newValue))
+	if(convar == g_hDemoPath)
 	{
-		InitDirectory(newValue);
+		if(!DirExists(newValue))
+		{
+			InitDirectory(newValue);
+		}
+	}
+	else
+	{
+		CheckStatus();
 	}
 }
 
