@@ -191,14 +191,12 @@ public CheckStatus()
 
 public GetPlayerCount()
 {
-	new bool:bIgnoreBots = GetConVarBool(g_hIgnoreBots);
-	new iNumClients = GetClientCount(false)-1;
-
-	if(!bIgnoreBots)
+	if(!GetConVarBool(g_hIgnoreBots))
 	{
-		return iNumClients;
+		return GetClientCount(false)-1;
 	}
 
+	new iNumClients = GetClientCount(true);
 	new iNumPlayers = 0;
 	for(new i = i; i < iNumClients; i++)
 	{
