@@ -13,6 +13,8 @@
 * 
 * 
 * Changelog
+* Nov 23, 2016 - v.1.11:
+* 				[*] Fixed error when disabling team wound detection when the server is hibernating
 * Nov 26, 2013 - v.1.10:
 * 				[*] Fixed race condition with database connection
 *				[*] Fixed consecutive TK count not being reset when sm_tk_numkills = 0
@@ -50,7 +52,7 @@
 #pragma semicolon 1
 #include <sourcemod>
 
-#define PLUGIN_VERSION "1.10"
+#define PLUGIN_VERSION "1.11"
 //#define DEBUG
 
 public Plugin:myinfo = 
