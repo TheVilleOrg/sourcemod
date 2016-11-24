@@ -85,7 +85,7 @@ new bool:clientLocked[MAXPLAYERS+1];
 
 public OnPluginStart()
 {
-	CreateConVar("sm_tkmanager_version", PLUGIN_VERSION, "TK Manager version", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	CreateConVar("sm_tkmanager_version", PLUGIN_VERSION, "TK Manager version", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	sm_tk_maxpoints = CreateConVar("sm_tk_maxpoints", "12", "Number of TK points before kick/ban", _, true, 0.0);
 	sm_tk_punishtype = CreateConVar("sm_tk_punishtype", "0", "Action to take when sm_tk_maxpoints is reached (0 = ban, 1 = kick)", _, true, 0.0, true, 1.0);
 	sm_tk_bantime = CreateConVar("sm_tk_bantime", "0", "Amount of time to ban if using sm_tk_punishtype 0 (0 = perm)", _, true, 0.0);
@@ -176,7 +176,7 @@ public OnClientDisconnect(client)
 		return;
 	
 	decl String:query[1024], String:authid[64];
-	GetClientAuthString(client, authid, sizeof(authid));
+	GetClientAuthId(client, AuthId_Engine, authid, sizeof(authid), true);
 	
 	if(clientTKPoints[client] == 0 && clientTK[client] == 0)
 	{
