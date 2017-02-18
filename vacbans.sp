@@ -76,13 +76,15 @@
 * 
 */
 
-#pragma semicolon 1
 #include <sourcemod>
 #include <socket>
 
+#pragma semicolon 1
+#pragma newdecls required
+
 #define PLUGIN_VERSION "1.4.3"
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "VAC Status Checker",
 	author = "Stevo.TVR",
@@ -91,15 +93,16 @@ public Plugin:myinfo =
 	url = "http://www.theville.org"
 }
 
-new Handle:hDatabase = INVALID_HANDLE;
+Database hDatabase = null;
 
-new Handle:sm_vacbans_db = INVALID_HANDLE;
-new Handle:sm_vacbans_cachetime = INVALID_HANDLE;
-new Handle:sm_vacbans_action = INVALID_HANDLE;
+ConVar sm_vacbans_db = null;
+ConVar sm_vacbans_cachetime = null;
+ConVar sm_vacbans_action = null;
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	CreateConVar("sm_vacbans_version", PLUGIN_VERSION, "VAC Ban Checker plugin version", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
+
 	sm_vacbans_db = CreateConVar("sm_vacbans_db", "storage-local", "The named database config to use for caching");
 	sm_vacbans_cachetime = CreateConVar("sm_vacbans_cachetime", "30", "How long in days before re-checking the same client for VAC status", _, true, 0.0);
 	sm_vacbans_action = CreateConVar("sm_vacbans_action", "0", "Action to take on VAC banned clients (0 = ban, 1 = kick, 2 = alert admins, 3 = log only)", _, true, 0.0, true, 3.0);
@@ -111,84 +114,84 @@ public OnPluginStart()
 	LoadTranslations("vacbans.phrases");
 }
 
-public OnConfigsExecuted()
+public void OnConfigsExecuted()
 {
-	decl String:db[64];
-	GetConVarString(sm_vacbans_db, db, sizeof(db));
-	SQL_TConnect(T_DBConnect, db);
+	char db[64];
+	sm_vacbans_db.GetString(db, sizeof(db));
+	Database.Connect(T_DBConnect, db);
 }
 
-public OnClientPostAdminCheck(client)
+public void OnClientPostAdminCheck(int client)
 {
 	if(!IsFakeClient(client))
 	{
-		decl String:query[1024];
-		decl String:steamID[32];
+		char query[1024];
+		char steamID[32];
 		
 		if(GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID)))
 		{
-			new Handle:hPack = CreateDataPack();
-			WritePackCell(hPack, client);
-			WritePackString(hPack, steamID);
+			DataPack hPack = new DataPack();
+			hPack.WriteCell(client);
+			hPack.WriteString(steamID);
 			
 			Format(query, sizeof(query), "SELECT * FROM `vacbans` WHERE `steam_id` = '%s' AND (`expire` > %d OR `expire` = 0) LIMIT 1;", steamID, GetTime());
-			SQL_TQuery(hDatabase, T_PlayerLookup, query, hPack);
+			hDatabase.Query(T_PlayerLookup, query, hPack);
 		}
 	}
 }
 
-public OnSocketConnected(Handle:hSock, any:hPack)
+public int OnSocketConnected(Handle hSock, DataPack hPack)
 {
-	new String:friendID[32];
-	decl String:requestStr[128];
+	char friendID[32];
+	char requestStr[128];
 	
-	ResetPack(hPack);
-	ReadPackCell(hPack);
-	ReadPackCell(hPack);
-	ReadPackString(hPack, friendID, sizeof(friendID));
+	hPack.Reset();
+	hPack.ReadCell();
+	hPack.ReadCell();
+	hPack.ReadString(friendID, sizeof(friendID));
 	
 	Format(requestStr, sizeof(requestStr), "GET /vacbans/v1/check/%s HTTP/1.0\r\nHost: %s\r\nConnection: close\r\n\r\n", friendID, "dev.stevotvr.com");
 	SocketSend(hSock, requestStr);
 }
 
-public OnSocketReceive(Handle:hSock, String:receiveData[], const dataSize, any:hPack)
+public int OnSocketReceive(Handle hSock, const char[] receiveData, const int dataSize, DataPack hPack)
 {
-	ResetPack(hPack);
-	ReadPackCell(hPack);
-	new Handle:hData = Handle:ReadPackCell(hPack);
+	hPack.Reset();
+	hPack.ReadCell();
+	DataPack hData = hPack.ReadCell();
 	
-	WritePackString(hData, receiveData);
+	hData.WriteString(receiveData);
 }
 
-public OnSocketDisconnected(Handle:hSock, any:hPack)
+public int OnSocketDisconnected(Handle hSock, DataPack hPack)
 {
-	ResetPack(hPack);
-	new client = ReadPackCell(hPack);
-	new Handle:hData = Handle:ReadPackCell(hPack);
+	hPack.Reset();
+	int client = hPack.ReadCell();
+	DataPack hData = hPack.ReadCell();
 	
-	ResetPack(hData);
-	new String:responseData[512];
-	decl String:buffer[512];
-	while(IsPackReadable(hData, 1)) {
-		ReadPackString(hData, buffer, sizeof(buffer));
+	hData.Reset();
+	char responseData[512];
+	char buffer[512];
+	while(hData.IsReadable()) {
+		hData.ReadString(buffer, sizeof(buffer));
 		StrCat(responseData, sizeof(responseData), buffer);
 	}
-	new String:responseParts[2][32];
+	char responseParts[2][32];
 	if(ExplodeString(responseData, "\r\n\r\n", responseParts, sizeof(responseParts), sizeof(responseParts[])) > 1)
 	{
 		responseData = responseParts[1];
 	}
 	TrimString(responseData);
 
-	decl String:friendID[32];
-	ReadPackString(hPack, friendID, sizeof(friendID));
+	char friendID[32];
+	hPack.ReadString(friendID, sizeof(friendID));
 
 	PrintToServer(responseData);
 
 	if(!StrEqual(responseData, "null", false))
 	{
-		new String:parts[4][10];
-		new count = ExplodeString(responseData, ",", parts, sizeof(parts), sizeof(parts[]), false);
+		char parts[4][10];
+		int count = ExplodeString(responseData, ",", parts, sizeof(parts), sizeof(parts[]), false);
 		
 		if(count >= 1)
 		{
@@ -205,47 +208,47 @@ public OnSocketDisconnected(Handle:hSock, any:hPack)
 		HandleClient(client, friendID, false);
 	}
 
-	CloseHandle(hData);
-	CloseHandle(hPack);
+	delete hData;
+	delete hPack;
 
-	CloseHandle(hSock);
+	delete hSock;
 }
 
-public OnSocketError(Handle:hSock, const errorType, const errorNum, any:hPack)
+public int OnSocketError(Handle hSock, const int errorType, const int errorNum, DataPack hPack)
 {
 	LogError("Socket error %d (errno %d)", errorType, errorNum);
 	
-	CloseHandle(hPack);
-	CloseHandle(hSock);
+	delete hPack;
+	delete hSock;
 }
 
-public Action:Command_Reset(client, args)
+public Action Command_Reset(int client, int args)
 {
-	SQL_FastQuery(hDatabase, "DELETE FROM `vacbans` WHERE `expire` != 0;");
+	hDatabase.Query(T_FastQuery, "DELETE FROM `vacbans` WHERE `expire` != 0;");
 	ReplyToCommand(client, "[SM] Local VAC Status Checker cache has been reset.");
 	return Plugin_Handled;
 }
 
-public Action:Command_Whitelist(client, args)
+public Action Command_Whitelist(int client, int args)
 {
-	decl String:argString[72];
-	decl String:action[8];
-	decl String:steamID[64];
-	decl String:friendID[64];
+	char argString[72];
+	char action[8];
+	char steamID[64];
+	char friendID[64];
 	
 	GetCmdArgString(argString, sizeof(argString));
-	new pos = BreakString(argString, action, sizeof(action));
+	int pos = BreakString(argString, action, sizeof(action));
 	if(pos > -1)
 	{
 		strcopy(steamID, sizeof(steamID), argString[pos]);
 		
 		if(GetFriendID(steamID, friendID, sizeof(friendID)))
 		{
-			decl String:query[1024];
+			char query[1024];
 			if(StrEqual(action, "add"))
 			{
 				Format(query, sizeof(query), "REPLACE INTO `vacbans` VALUES('%s', '0', '0');", friendID);
-				SQL_TQuery(hDatabase, T_FastQuery, query);
+				hDatabase.Query(T_FastQuery, query);
 				
 				ReplyToCommand(client, "[SM] %s added to the VAC Status Checker whitelist.", steamID);
 				
@@ -254,7 +257,7 @@ public Action:Command_Whitelist(client, args)
 			if(StrEqual(action, "remove"))
 			{
 				Format(query, sizeof(query), "DELETE FROM `vacbans` WHERE `steam_id` = '%s';", friendID);
-				SQL_TQuery(hDatabase, T_FastQuery, query);
+				hDatabase.Query(T_FastQuery, query);
 				
 				ReplyToCommand(client, "[SM] %s removed from the VAC Status Checker whitelist.", steamID);
 				
@@ -266,7 +269,7 @@ public Action:Command_Whitelist(client, args)
 	{
 		if(StrEqual(action, "clear"))
 		{
-			SQL_TQuery(hDatabase, T_FastQuery, "DELETE FROM `vacbans` WHERE `expire` = 0;");
+			hDatabase.Query(T_FastQuery, "DELETE FROM `vacbans` WHERE `expire` = 0;");
 			
 			ReplyToCommand(client, "[SM] VAC Status Checker whitelist cleared.");
 			
@@ -278,20 +281,20 @@ public Action:Command_Whitelist(client, args)
 	return Plugin_Handled;
 }
 
-HandleClient(client, const String:friendID[], bool:vacBanned)
+void HandleClient(int client, const char[] friendID, bool vacBanned)
 {
 	if(IsClientAuthorized(client))
 	{
 		// Check to make sure this is the same client that originally connected
-		decl String:clientFriendID[32];
+		char clientFriendID[32];
 		if(!GetClientAuthId(client, AuthId_SteamID64, clientFriendID, sizeof(clientFriendID)) || !StrEqual(friendID, clientFriendID))
 		{
 			return;
 		}
 		
-		new banned = 0;
-		new expire = GetTime() + (GetConVarInt(sm_vacbans_cachetime)*86400);
-		new action = GetConVarInt(sm_vacbans_action);
+		int banned = 0;
+		int expire = GetTime() + (GetConVarInt(sm_vacbans_cachetime)*86400);
+		int action = GetConVarInt(sm_vacbans_action);
 		
 		if(vacBanned)
 		{
@@ -300,7 +303,7 @@ HandleClient(client, const String:friendID[], bool:vacBanned)
 			{
 				case 0:
 				{
-					decl String:userformat[64];
+					char userformat[64];
 					Format(userformat, sizeof(userformat), "%L", client);
 					LogAction(0, client, "%s %T", userformat, "Banned_Server", LANG_SERVER);
 					
@@ -312,7 +315,7 @@ HandleClient(client, const String:friendID[], bool:vacBanned)
 				}
 				case 2:
 				{
-					for (new i = 1; i <= MaxClients; i++)
+					for (int i = 1; i <= MaxClients; i++)
 					{
 						if (IsClientInGame(i) && !IsFakeClient(i) && CheckCommandAccess(i, "sm_listvac", ADMFLAG_BAN))
 						{
@@ -321,34 +324,34 @@ HandleClient(client, const String:friendID[], bool:vacBanned)
 					}
 				}
 			}
-			decl String:path[PLATFORM_MAX_PATH];
-			BuildPath(PathType:Path_SM, path, sizeof(path), "logs/vacbans.log");
+			char path[PLATFORM_MAX_PATH];
+			BuildPath(Path_SM, path, sizeof(path), "logs/vacbans.log");
 			LogToFile(path, "Player %L is VAC Banned", client);
 		}
 		
-		decl String:query[1024];
+		char query[1024];
 		Format(query, sizeof(query), "REPLACE INTO `vacbans` VALUES('%s', '%d', '%d');", friendID, banned, expire);
-		SQL_TQuery(hDatabase, T_FastQuery, query);
+		hDatabase.Query(T_FastQuery, query);
 	}
 }
 
-bool:GetFriendID(String:AuthID[], String:FriendID[], size)
+bool GetFriendID(char[] AuthID, char[] FriendID, int size)
 {
-	decl String:toks[3][18];
-	new parts = ExplodeString(AuthID, ":", toks, sizeof(toks), sizeof(toks[]));
-	new iFriendID;
+	char toks[3][18];
+	int parts = ExplodeString(AuthID, ":", toks, sizeof(toks), sizeof(toks[]));
+	int iFriendID;
 	if(parts == 3)
 	{
 		if(StrContains(toks[0], "STEAM_", false) >= 0)
 		{
-			new iServer = StringToInt(toks[1]);
-			new iAuthID = StringToInt(toks[2]);
+			int iServer = StringToInt(toks[1]);
+			int iAuthID = StringToInt(toks[2]);
 			iFriendID = (iAuthID*2) + 60265728 + iServer;
 		}
 		else if(StrEqual(toks[0], "[U", false))
 		{
 			ReplaceString(toks[2], sizeof(toks[]), "]", "");
-			new iAuthID = StringToInt(toks[2]);
+			int iAuthID = StringToInt(toks[2]);
 			iFriendID = iAuthID + 60265728;
 		}
 		else
@@ -370,12 +373,12 @@ bool:GetFriendID(String:AuthID[], String:FriendID[], size)
 
 	if (iFriendID >= 100000000)
 	{
-		new upper = 765611979;
-		new String:temp[12], String:carry[12];
+		int upper = 765611979;
+		char temp[12], carry[12];
 		
 		Format(temp, sizeof(temp), "%d", iFriendID);
 		Format(carry, 2, "%s", temp);
-		new icarry = StringToInt(carry[0]);
+		int icarry = StringToInt(carry[0]);
 		upper += icarry;
 
 		Format(temp, sizeof(temp), "%d", iFriendID);
@@ -390,34 +393,34 @@ bool:GetFriendID(String:AuthID[], String:FriendID[], size)
 }
 
 // Threaded DB stuff
-public T_DBConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
+public void T_DBConnect(Database hndl, const char[] error, any data)
 {
-	if(hndl == INVALID_HANDLE)
+	if(hndl == null)
 	{
 		SetFailState(error);
 	}
 	hDatabase = hndl;
-	SQL_TQuery(hDatabase, T_FastQuery, "CREATE TABLE IF NOT EXISTS `vacbans` (`steam_id` VARCHAR(64) NOT NULL, `banned` BOOL NOT NULL, `expire` INT(11) NOT NULL, PRIMARY KEY (`steam_id`));");
+	hDatabase.Query(T_FastQuery, "CREATE TABLE IF NOT EXISTS `vacbans` (`steam_id` VARCHAR(64) NOT NULL, `banned` BOOL NOT NULL, `expire` INT(11) NOT NULL, PRIMARY KEY (`steam_id`));");
 }
 
-public T_PlayerLookup(Handle:owner, Handle:hQuery, const String:error[], any:hPack)
+public void T_PlayerLookup(Database owner, DBResultSet hQuery, const char[] error, DataPack hPack)
 {
-	new bool:checked = false;
+	bool checked = false;
 	
-	ResetPack(hPack);
-	new client = ReadPackCell(hPack);
-	decl String:friendID[32];
-	ReadPackString(hPack, friendID, sizeof(friendID));
-	CloseHandle(hPack);
+	hPack.Reset();
+	int client = hPack.ReadCell();
+	char friendID[32];
+	hPack.ReadString(friendID, sizeof(friendID));
+	delete hPack;
 	
-	if(hQuery != INVALID_HANDLE)
+	if(hQuery != null)
 	{
-		if(SQL_GetRowCount(hQuery) > 0)
+		if(hQuery.RowCount > 0)
 		{
 			checked = true;
-			while(SQL_FetchRow(hQuery))
+			while(hQuery.FetchRow())
 			{
-				if(SQL_FetchInt(hQuery, 1) > 0)
+				if(hQuery.FetchInt(1) > 0)
 				{
 					HandleClient(client, friendID, true);
 				}
@@ -427,20 +430,20 @@ public T_PlayerLookup(Handle:owner, Handle:hQuery, const String:error[], any:hPa
 	
 	if(!checked)
 	{
-		new Handle:hPack2 = CreateDataPack();
-		new Handle:hData = CreateDataPack();
-		new Handle:hSock = SocketCreate(SOCKET_TCP, OnSocketError);
+		DataPack hPack2 = new DataPack();
+		DataPack hData = new DataPack();
+		Handle hSock = SocketCreate(SOCKET_TCP, OnSocketError);
 		
-		WritePackCell(hPack2, client);
-		WritePackCell(hPack2, _:hData);
-		WritePackString(hPack2, friendID);
+		hPack2.WriteCell(client);
+		hPack2.WriteCell(hData);
+		hPack2.WriteString(friendID);
 		
 		SocketSetArg(hSock, hPack2);
 		SocketConnect(hSock, OnSocketConnected, OnSocketReceive, OnSocketDisconnected, "dev.stevotvr.com", 80);
 	}
 }
 
-public T_FastQuery(Handle:owner, Handle:hndl, const String:error[], any:data)
+public void T_FastQuery(Database owner, DBResultSet hndl, const char[] error, any data)
 {
 	// Nothing to do
 }
