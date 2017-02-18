@@ -116,9 +116,12 @@ public void OnPluginStart()
 
 public void OnConfigsExecuted()
 {
-	char db[64];
-	sm_vacbans_db.GetString(db, sizeof(db));
-	Database.Connect(T_DBConnect, db);
+	if(hDatabase == null)
+	{
+		char db[64];
+		sm_vacbans_db.GetString(db, sizeof(db));
+		Database.Connect(T_DBConnect, db);
+	}
 }
 
 public void OnClientPostAdminCheck(int client)
