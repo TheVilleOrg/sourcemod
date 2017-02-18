@@ -93,19 +93,19 @@ public Plugin myinfo =
 	url = "http://www.theville.org"
 }
 
-Database hDatabase = null;
+Database g_hDatabase = null;
 
-ConVar sm_vacbans_db = null;
-ConVar sm_vacbans_cachetime = null;
-ConVar sm_vacbans_action = null;
+ConVar g_hCVDB = null;
+ConVar g_hCVCacheTime = null;
+ConVar g_hCVAction = null;
 
 public void OnPluginStart()
 {
 	CreateConVar("sm_vacbans_version", PLUGIN_VERSION, "VAC Ban Checker plugin version", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
 
-	sm_vacbans_db = CreateConVar("sm_vacbans_db", "storage-local", "The named database config to use for caching");
-	sm_vacbans_cachetime = CreateConVar("sm_vacbans_cachetime", "30", "How long in days before re-checking the same client for VAC status", _, true, 0.0);
-	sm_vacbans_action = CreateConVar("sm_vacbans_action", "0", "Action to take on VAC banned clients (0 = ban, 1 = kick, 2 = alert admins, 3 = log only)", _, true, 0.0, true, 3.0);
+	g_hCVDB = CreateConVar("sm_vacbans_db", "storage-local", "The named database config to use for caching");
+	g_hCVCacheTime = CreateConVar("sm_vacbans_cachetime", "30", "How long in days before re-checking the same client for VAC status", _, true, 0.0);
+	g_hCVAction = CreateConVar("sm_vacbans_action", "0", "Action to take on VAC banned clients (0 = ban, 1 = kick, 2 = alert admins, 3 = log only)", _, true, 0.0, true, 3.0);
 	AutoExecConfig(true, "vacbans");
 	
 	RegAdminCmd("sm_vacbans_reset", Command_Reset, ADMFLAG_RCON, "Clears the local vacbans SQLite database");
@@ -116,11 +116,11 @@ public void OnPluginStart()
 
 public void OnConfigsExecuted()
 {
-	if(hDatabase == null)
+	if(g_hDatabase == null)
 	{
 		char db[64];
-		sm_vacbans_db.GetString(db, sizeof(db));
-		Database.Connect(T_DBConnect, db);
+		g_hCVDB.GetString(db, sizeof(db));
+		Database.Connect(OnDBConnected, db);
 	}
 }
 
@@ -138,7 +138,7 @@ public void OnClientPostAdminCheck(int client)
 			hPack.WriteString(steamID);
 			
 			Format(query, sizeof(query), "SELECT * FROM `vacbans` WHERE `steam_id` = '%s' AND (`expire` > %d OR `expire` = 0) LIMIT 1;", steamID, GetTime());
-			hDatabase.Query(T_PlayerLookup, query, hPack);
+			g_hDatabase.Query(OnQueryPlayerLookup, query, hPack);
 		}
 	}
 }
@@ -227,7 +227,7 @@ public int OnSocketError(Handle hSock, const int errorType, const int errorNum, 
 
 public Action Command_Reset(int client, int args)
 {
-	hDatabase.Query(T_FastQuery, "DELETE FROM `vacbans` WHERE `expire` != 0;");
+	g_hDatabase.Query(OnQueryNoOp, "DELETE FROM `vacbans` WHERE `expire` != 0;");
 	ReplyToCommand(client, "[SM] Local VAC Status Checker cache has been reset.");
 	return Plugin_Handled;
 }
@@ -251,7 +251,7 @@ public Action Command_Whitelist(int client, int args)
 			if(StrEqual(action, "add"))
 			{
 				Format(query, sizeof(query), "REPLACE INTO `vacbans` VALUES('%s', '0', '0');", friendID);
-				hDatabase.Query(T_FastQuery, query);
+				g_hDatabase.Query(OnQueryNoOp, query);
 				
 				ReplyToCommand(client, "[SM] %s added to the VAC Status Checker whitelist.", steamID);
 				
@@ -260,7 +260,7 @@ public Action Command_Whitelist(int client, int args)
 			if(StrEqual(action, "remove"))
 			{
 				Format(query, sizeof(query), "DELETE FROM `vacbans` WHERE `steam_id` = '%s';", friendID);
-				hDatabase.Query(T_FastQuery, query);
+				g_hDatabase.Query(OnQueryNoOp, query);
 				
 				ReplyToCommand(client, "[SM] %s removed from the VAC Status Checker whitelist.", steamID);
 				
@@ -272,7 +272,7 @@ public Action Command_Whitelist(int client, int args)
 	{
 		if(StrEqual(action, "clear"))
 		{
-			hDatabase.Query(T_FastQuery, "DELETE FROM `vacbans` WHERE `expire` = 0;");
+			g_hDatabase.Query(OnQueryNoOp, "DELETE FROM `vacbans` WHERE `expire` = 0;");
 			
 			ReplyToCommand(client, "[SM] VAC Status Checker whitelist cleared.");
 			
@@ -296,8 +296,8 @@ void HandleClient(int client, const char[] friendID, bool vacBanned)
 		}
 		
 		int banned = 0;
-		int expire = GetTime() + (GetConVarInt(sm_vacbans_cachetime)*86400);
-		int action = GetConVarInt(sm_vacbans_action);
+		int expire = GetTime() + (GetConVarInt(g_hCVCacheTime)*86400);
+		int action = GetConVarInt(g_hCVAction);
 		
 		if(vacBanned)
 		{
@@ -334,7 +334,7 @@ void HandleClient(int client, const char[] friendID, bool vacBanned)
 		
 		char query[1024];
 		Format(query, sizeof(query), "REPLACE INTO `vacbans` VALUES('%s', '%d', '%d');", friendID, banned, expire);
-		hDatabase.Query(T_FastQuery, query);
+		g_hDatabase.Query(OnQueryNoOp, query);
 	}
 }
 
@@ -395,35 +395,35 @@ bool GetFriendID(char[] AuthID, char[] FriendID, int size)
 	return true;
 }
 
-// Threaded DB stuff
-public void T_DBConnect(Database hndl, const char[] error, any data)
+// Threaded DB callbacks
+public void OnDBConnected(Database db, const char[] error, any data)
 {
-	if(hndl == null)
+	if(db == null)
 	{
 		SetFailState(error);
 	}
-	hDatabase = hndl;
-	hDatabase.Query(T_FastQuery, "CREATE TABLE IF NOT EXISTS `vacbans` (`steam_id` VARCHAR(64) NOT NULL, `banned` BOOL NOT NULL, `expire` INT(11) NOT NULL, PRIMARY KEY (`steam_id`));");
+	g_hDatabase = db;
+	g_hDatabase.Query(OnQueryNoOp, "CREATE TABLE IF NOT EXISTS `vacbans` (`steam_id` VARCHAR(64) NOT NULL, `banned` BOOL NOT NULL, `expire` INT(11) NOT NULL, PRIMARY KEY (`steam_id`));");
 }
 
-public void T_PlayerLookup(Database owner, DBResultSet hQuery, const char[] error, DataPack hPack)
+public void OnQueryPlayerLookup(Database db, DBResultSet results, const char[] error, DataPack data)
 {
 	bool checked = false;
 	
-	hPack.Reset();
-	int client = hPack.ReadCell();
+	data.Reset();
+	int client = data.ReadCell();
 	char friendID[32];
-	hPack.ReadString(friendID, sizeof(friendID));
-	delete hPack;
+	data.ReadString(friendID, sizeof(friendID));
+	delete data;
 	
-	if(hQuery != null)
+	if(results != null)
 	{
-		if(hQuery.RowCount > 0)
+		if(results.RowCount > 0)
 		{
 			checked = true;
-			while(hQuery.FetchRow())
+			while(results.FetchRow())
 			{
-				if(hQuery.FetchInt(1) > 0)
+				if(results.FetchInt(1) > 0)
 				{
 					HandleClient(client, friendID, true);
 				}
@@ -433,20 +433,20 @@ public void T_PlayerLookup(Database owner, DBResultSet hQuery, const char[] erro
 	
 	if(!checked)
 	{
-		DataPack hPack2 = new DataPack();
+		DataPack hPack = new DataPack();
 		DataPack hData = new DataPack();
 		Handle hSock = SocketCreate(SOCKET_TCP, OnSocketError);
 		
-		hPack2.WriteCell(client);
-		hPack2.WriteCell(hData);
-		hPack2.WriteString(friendID);
+		hPack.WriteCell(client);
+		hPack.WriteCell(hData);
+		hPack.WriteString(friendID);
 		
-		SocketSetArg(hSock, hPack2);
+		SocketSetArg(hSock, hPack);
 		SocketConnect(hSock, OnSocketConnected, OnSocketReceive, OnSocketDisconnected, "dev.stevotvr.com", 80);
 	}
 }
 
-public void T_FastQuery(Database owner, DBResultSet hndl, const char[] error, any data)
+public void OnQueryNoOp(Database db, DBResultSet results, const char[] error, any data)
 {
 	// Nothing to do
 }
