@@ -147,24 +147,7 @@ public OnSocketConnected(Handle:hSock, any:hPack)
 	ReadPackCell(hPack);
 	ReadPackString(hPack, friendID, sizeof(friendID));
 	
-	Format(requestStr, sizeof(requestStr), "GET /profiles/%s?xml=1 HTTP/1.0\r\nHost: %s\r\nConnection: close\r\n\r\n", friendID, "steamcommunity.com");
-	SocketSend(hSock, requestStr);
-}
-
-public OnSocketConnected2(Handle:hSock, any:hPack)
-{
-	decl String:redirURL[64];
-	decl String:requestStr[512];
-	
-	ResetPack(hPack);
-	ReadPackCell(hPack);
-	new Handle:hData = Handle:ReadPackCell(hPack);
-	
-	ResetPack(hData);
-	ReadPackString(hData, redirURL, sizeof(redirURL));
-	ResetPack(hData, true);
-	
-	Format(requestStr, sizeof(requestStr), "GET %s?xml=1 HTTP/1.0\r\nHost: %s\r\nConnection: close\r\n\r\n", redirURL, "steamcommunity.com");
+	Format(requestStr, sizeof(requestStr), "GET /vacbans/v1/check/%s HTTP/1.0\r\nHost: %s\r\nConnection: close\r\n\r\n", friendID, "dev.stevotvr.com");
 	SocketSend(hSock, requestStr);
 }
 
@@ -179,52 +162,53 @@ public OnSocketReceive(Handle:hSock, String:receiveData[], const dataSize, any:h
 
 public OnSocketDisconnected(Handle:hSock, any:hPack)
 {
-	new String:XMLData[4096];
-	
-	CloseHandle(hSock);
-	
 	ResetPack(hPack);
 	new client = ReadPackCell(hPack);
 	new Handle:hData = Handle:ReadPackCell(hPack);
 	
 	ResetPack(hData);
-	decl String:buffer[4096];
+	new String:responseData[512];
+	decl String:buffer[512];
 	while(IsPackReadable(hData, 1)) {
 		ReadPackString(hData, buffer, sizeof(buffer));
-		StrCat(XMLData, sizeof(XMLData), buffer);
+		StrCat(responseData, sizeof(responseData), buffer);
 	}
-	
-	new pos;
-	if((pos = StrContains(XMLData, "Location: http://steamcommunity.com", false)) >= 0)
+	new String:responseParts[2][32];
+	if(ExplodeString(responseData, "\r\n\r\n", responseParts, sizeof(responseParts), sizeof(responseParts[])) > 1)
 	{
-		decl String:redirURL[64];
-		SplitString(XMLData[pos+35], "\r", redirURL, sizeof(redirURL));
-		
-		ResetPack(hData, true);
-		WritePackString(hData, redirURL);
-		
-		// Create a second socket because the original is invalid for some reason
-		hSock = SocketCreate(SOCKET_TCP, OnSocketError);
-		SocketSetArg(hSock, hPack);
-		SocketConnect(hSock, OnSocketConnected2, OnSocketReceive, OnSocketDisconnected, "steamcommunity.com", 80);
+		responseData = responseParts[1];
 	}
-	else if((pos = StrContains(XMLData, "<vacBanned>")) >= 0)
+	TrimString(responseData);
+
+	decl String:friendID[32];
+	ReadPackString(hPack, friendID, sizeof(friendID));
+
+	PrintToServer(responseData);
+
+	if(!StrEqual(responseData, "null", false))
 	{
-		decl String:friendID[32];
-		ReadPackString(hPack, friendID, sizeof(friendID));
-		new String:banned[2];
-		strcopy(banned, sizeof(banned), XMLData[pos+11]);
+		new String:parts[4][10];
+		new count = ExplodeString(responseData, ",", parts, sizeof(parts), sizeof(parts[]), false);
 		
-		HandleClient(client, friendID, StrEqual(banned, "1"));
-		
-		CloseHandle(hData);
-		CloseHandle(hPack);
+		if(count >= 1)
+		{
+			HandleClient(client, friendID, StringToInt(parts[0]) > 0);
+			PrintToServer("banned: %d", StringToInt(parts[0]));
+		}
+		else
+		{
+			HandleClient(client, friendID, false);
+		}
 	}
 	else
 	{
-		CloseHandle(hData);
-		CloseHandle(hPack);
+		HandleClient(client, friendID, false);
 	}
+
+	CloseHandle(hData);
+	CloseHandle(hPack);
+
+	CloseHandle(hSock);
 }
 
 public OnSocketError(Handle:hSock, const errorType, const errorNum, any:hPack)
@@ -452,7 +436,7 @@ public T_PlayerLookup(Handle:owner, Handle:hQuery, const String:error[], any:hPa
 		WritePackString(hPack2, friendID);
 		
 		SocketSetArg(hSock, hPack2);
-		SocketConnect(hSock, OnSocketConnected, OnSocketReceive, OnSocketDisconnected, "steamcommunity.com", 80);
+		SocketConnect(hSock, OnSocketConnected, OnSocketReceive, OnSocketDisconnected, "dev.stevotvr.com", 80);
 	}
 }
 
