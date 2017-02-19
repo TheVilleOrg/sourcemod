@@ -83,6 +83,7 @@
 #pragma newdecls required
 
 #define PLUGIN_VERSION "1.4.3"
+#define DATABASE_VERSION 1
 
 public Plugin myinfo = 
 {
@@ -148,7 +149,7 @@ public void OnClientPostAdminCheck(int client)
 			hPack.WriteCell(client);
 			hPack.WriteString(steamID);
 
-			Format(query, sizeof(query), "SELECT * FROM `vacbans` WHERE `steam_id` = '%s' AND (`expire` > %d OR `expire` = 0) LIMIT 1;", steamID, GetTime());
+			Format(query, sizeof(query), "SELECT * FROM `vacbans_cache` WHERE `steam_id` = '%s' AND (`expire` > %d OR `expire` = 0) LIMIT 1;", steamID, GetTime());
 			g_hDatabase.Query(OnQueryPlayerLookup, query, hPack);
 		}
 	}
@@ -211,11 +212,11 @@ public int OnSocketDisconnected(Handle hSock, DataPack hPack)
 		bool communityBanned = count > 2 ? StringToInt(parts[2]) == 1 : false;
 		int econStatus = count > 3 ? StringToInt(parts[3]) : 0;
 
-		HandleClient(client, friendID, vacBans, gameBans, communityBanned, econStatus);
+		HandleClient(client, friendID, vacBans, gameBans, communityBanned, econStatus, false);
 	}
 	else
 	{
-		HandleClient(client, friendID, 0, 0, false, 0);
+		HandleClient(client, friendID, 0, 0, false, 0, false);
 	}
 
 	delete hData;
@@ -234,7 +235,7 @@ public int OnSocketError(Handle hSock, const int errorType, const int errorNum, 
 
 public Action Command_Reset(int client, int args)
 {
-	g_hDatabase.Query(OnQueryNoOp, "DELETE FROM `vacbans` WHERE `expire` != 0;");
+	g_hDatabase.Query(OnQueryNoOp, "DELETE FROM `vacbans_cache` WHERE `expire` != 0;");
 	ReplyToCommand(client, "[SM] Local VAC Status Checker cache has been reset.");
 	return Plugin_Handled;
 }
@@ -257,7 +258,7 @@ public Action Command_Whitelist(int client, int args)
 			char query[1024];
 			if(StrEqual(action, "add"))
 			{
-				Format(query, sizeof(query), "REPLACE INTO `vacbans` VALUES('%s', '0', '0');", friendID);
+				Format(query, sizeof(query), "REPLACE INTO `vacbans_cache` (`steam_id`, `expire`) VALUES ('%s', 0);", friendID);
 				g_hDatabase.Query(OnQueryNoOp, query);
 
 				ReplyToCommand(client, "[SM] %s added to the VAC Status Checker whitelist.", steamID);
@@ -266,7 +267,7 @@ public Action Command_Whitelist(int client, int args)
 			}
 			if(StrEqual(action, "remove"))
 			{
-				Format(query, sizeof(query), "DELETE FROM `vacbans` WHERE `steam_id` = '%s';", friendID);
+				Format(query, sizeof(query), "DELETE FROM `vacbans_cache` WHERE `steam_id` = '%s';", friendID);
 				g_hDatabase.Query(OnQueryNoOp, query);
 
 				ReplyToCommand(client, "[SM] %s removed from the VAC Status Checker whitelist.", steamID);
@@ -279,7 +280,7 @@ public Action Command_Whitelist(int client, int args)
 	{
 		if(StrEqual(action, "clear"))
 		{
-			g_hDatabase.Query(OnQueryNoOp, "DELETE FROM `vacbans` WHERE `expire` = 0;");
+			g_hDatabase.Query(OnQueryNoOp, "DELETE FROM `vacbans_cache` WHERE `expire` = 0;");
 
 			ReplyToCommand(client, "[SM] VAC Status Checker whitelist cleared.");
 
@@ -291,7 +292,7 @@ public Action Command_Whitelist(int client, int args)
 	return Plugin_Handled;
 }
 
-void HandleClient(int client, const char[] friendID, int numVACBans, int numGameBans, bool communityBanned, int econStatus)
+void HandleClient(int client, const char[] friendID, int numVACBans, int numGameBans, bool communityBanned, int econStatus, bool fromCache)
 {
 	if(IsClientAuthorized(client))
 	{
@@ -302,17 +303,15 @@ void HandleClient(int client, const char[] friendID, int numVACBans, int numGame
 			return;
 		}
 
-		int banned = 0;
 		int expire = GetTime() + g_hCVCacheTime.IntValue * 86400;
 
 		bool vacBanned = numVACBans > 0 && g_hCVDetectVACBans.BoolValue;
 		bool gameBanned = numGameBans > 0 && g_hCVDetectGameBans.BoolValue;
-		communityBanned = communityBanned && g_hCVDetectCommunityBans.BoolValue;
+		bool commBanned = communityBanned && g_hCVDetectCommunityBans.BoolValue;
 		bool econBanned = econStatus > 0 && g_hCVDetectEconBans.BoolValue;
 
-		if(vacBanned || gameBanned || communityBanned || econBanned)
+		if(vacBanned || gameBanned || commBanned || econBanned)
 		{
-			banned = 1;
 			switch(g_hCVAction.IntValue)
 			{
 				case 0:
@@ -344,9 +343,12 @@ void HandleClient(int client, const char[] friendID, int numVACBans, int numGame
 			LogToFile(path, "Player %L is VAC Banned", client);
 		}
 
-		char query[1024];
-		Format(query, sizeof(query), "REPLACE INTO `vacbans` VALUES('%s', '%d', '%d');", friendID, banned, expire);
-		g_hDatabase.Query(OnQueryNoOp, query);
+		if(!fromCache)
+		{
+			char query[1024];
+			Format(query, sizeof(query), "REPLACE INTO `vacbans_cache` VALUES ('%s', %d, %d, %d, %d, %d);", friendID, numVACBans, numGameBans, communityBanned ? 1 : 0, econStatus, expire);
+			g_hDatabase.Query(OnQueryNoOp, query);
+		}
 	}
 }
 
@@ -415,7 +417,44 @@ public void OnDBConnected(Database db, const char[] error, any data)
 		SetFailState(error);
 	}
 	g_hDatabase = db;
-	g_hDatabase.Query(OnQueryNoOp, "CREATE TABLE IF NOT EXISTS `vacbans` (`steam_id` VARCHAR(64) NOT NULL, `banned` BOOL NOT NULL, `expire` INT(11) NOT NULL, PRIMARY KEY (`steam_id`));");
+	g_hDatabase.Query(OnQueryVersionCheck, "SELECT `version` FROM `vacbans_version`;");
+}
+
+public void OnQueryVersionCheck(Database db, DBResultSet results, const char[] error, any data)
+{
+	if(results == null || !results.FetchRow())
+	{
+		g_hDatabase.Query(OnQueryVersionCreated, "CREATE TABLE IF NOT EXISTS `vacbans_version` (`version` INT(11) NOT NULL);");
+		g_hDatabase.Query(OnQueryCacheCreated, "CREATE TABLE IF NOT EXISTS `vacbans_cache` (`steam_id` VARCHAR(64) NOT NULL, `vac_bans` INT(11), `game_bans` INT(11), `community_banned` BOOL, `econ_status` INT(11), `expire` INT(11) NOT NULL, PRIMARY KEY (`steam_id`));");
+	}
+}
+
+public void OnQueryVersionCreated(Database db, DBResultSet results, const char[] error, any data)
+{
+	char query[512];
+	Format(query, sizeof(query), "INSERT INTO `vacbans_version` VALUES (%d);", DATABASE_VERSION);
+	g_hDatabase.Query(OnQueryNoOp, query);
+}
+
+public void OnQueryCacheCreated(Database db, DBResultSet results, const char[] error, any data)
+{
+	g_hDatabase.Query(OnQueryMigrate, "SELECT `steam_id` FROM `vacbans` WHERE `banned` = 0 AND `expire` = 0;");
+}
+
+public void OnQueryMigrate(Database db, DBResultSet results, const char[] error, any data)
+{
+	if(results != null)
+	{
+		char steamId[32];
+		char query[512];
+		while(results.FetchRow())
+		{
+			results.FetchString(0, steamId, sizeof(steamId));
+			Format(query, sizeof(query), "INSERT INTO `vacbans_cache` (`steam_id`, `expire`) VALUES ('%s', 0);", steamId);
+			g_hDatabase.Query(OnQueryNoOp, query);
+		}
+		g_hDatabase.Query(OnQueryNoOp, "DROP TABLE `vacbans`;");
+	}
 }
 
 public void OnQueryPlayerLookup(Database db, DBResultSet results, const char[] error, DataPack data)
@@ -430,16 +469,15 @@ public void OnQueryPlayerLookup(Database db, DBResultSet results, const char[] e
 
 	if(results != null)
 	{
-		if(results.RowCount > 0)
+		if(results.FetchRow())
 		{
 			checked = true;
-			while(results.FetchRow())
+			if(results.IsFieldNull(1))
 			{
-				if(results.FetchInt(1) > 0)
-				{
-					HandleClient(client, friendID, 1, 0, false, 0);
-				}
+				// Player is whitelisted
+				return;
 			}
+			HandleClient(client, friendID, results.FetchInt(1), results.FetchInt(2), results.FetchInt(3) == 1, results.FetchInt(4), true);
 		}
 	}
 
