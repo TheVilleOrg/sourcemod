@@ -98,14 +98,22 @@ Database g_hDatabase = null;
 ConVar g_hCVDB = null;
 ConVar g_hCVCacheTime = null;
 ConVar g_hCVAction = null;
+ConVar g_hCVDetectVACBans = null;
+ConVar g_hCVDetectGameBans = null;
+ConVar g_hCVDetectCommunityBans = null;
+ConVar g_hCVDetectEconBans = null;
 
 public void OnPluginStart()
 {
 	CreateConVar("sm_vacbans_version", PLUGIN_VERSION, "VAC Ban Checker plugin version", FCVAR_SPONLY | FCVAR_REPLICATED | FCVAR_NOTIFY | FCVAR_DONTRECORD);
 
 	g_hCVDB = CreateConVar("sm_vacbans_db", "storage-local", "The named database config to use for caching");
-	g_hCVCacheTime = CreateConVar("sm_vacbans_cachetime", "30", "How long in days before re-checking the same client for VAC status", _, true, 0.0);
-	g_hCVAction = CreateConVar("sm_vacbans_action", "0", "Action to take on VAC banned clients (0 = ban, 1 = kick, 2 = alert admins, 3 = log only)", _, true, 0.0, true, 3.0);
+	g_hCVCacheTime = CreateConVar("sm_vacbans_cachetime", "30", "How long in days before re-checking the same client", _, true, 0.0);
+	g_hCVAction = CreateConVar("sm_vacbans_action", "0", "Action to take on detected clients (0 = ban, 1 = kick, 2 = alert admins, 3 = log only)", _, true, 0.0, true, 3.0);
+	g_hCVDetectVACBans = CreateConVar("sm_vacbans_detect_vac_bans", "1", "Enable VAC ban detection", _, true, 0.0, true, 1.0);
+	g_hCVDetectGameBans = CreateConVar("sm_vacbans_detect_game_bans", "0", "Enable game ban detection", _, true, 0.0, true, 1.0);
+	g_hCVDetectCommunityBans = CreateConVar("sm_vacbans_detect_community_bans", "0", "Enable Steam Community ban detection", _, true, 0.0, true, 1.0);
+	g_hCVDetectEconBans = CreateConVar("sm_vacbans_detect_econ_bans", "0", "Enable economy (trade) ban/probation detection", _, true, 0.0, true, 1.0);
 	AutoExecConfig(true, "vacbans");
 
 	RegAdminCmd("sm_vacbans_reset", Command_Reset, ADMFLAG_RCON, "Clears the local vacbans SQLite database");
@@ -190,26 +198,21 @@ public int OnSocketDisconnected(Handle hSock, DataPack hPack)
 	char friendID[32];
 	hPack.ReadString(friendID, sizeof(friendID));
 
-	PrintToServer(responseData);
-
 	if(!StrEqual(responseData, "null", false))
 	{
 		char parts[4][10];
 		int count = ExplodeString(responseData, ",", parts, sizeof(parts), sizeof(parts[]), false);
 
-		if(count >= 1)
-		{
-			HandleClient(client, friendID, StringToInt(parts[0]) > 0);
-			PrintToServer("banned: %d", StringToInt(parts[0]));
-		}
-		else
-		{
-			HandleClient(client, friendID, false);
-		}
+		int vacBans = count > 0 ? StringToInt(parts[0]) : 0;
+		int gameBans = count > 1 ? StringToInt(parts[1]) : 0;
+		bool communityBanned = count > 2 ? StringToInt(parts[2]) == 1 : false;
+		int econStatus = count > 3 ? StringToInt(parts[3]) : 0;
+
+		HandleClient(client, friendID, vacBans, gameBans, communityBanned, econStatus);
 	}
 	else
 	{
-		HandleClient(client, friendID, false);
+		HandleClient(client, friendID, 0, 0, false, 0);
 	}
 
 	delete hData;
@@ -285,7 +288,7 @@ public Action Command_Whitelist(int client, int args)
 	return Plugin_Handled;
 }
 
-void HandleClient(int client, const char[] friendID, bool vacBanned)
+void HandleClient(int client, const char[] friendID, int numVACBans, int numGameBans, bool communityBanned, int econStatus)
 {
 	if(IsClientAuthorized(client))
 	{
@@ -299,7 +302,12 @@ void HandleClient(int client, const char[] friendID, bool vacBanned)
 		int banned = 0;
 		int expire = GetTime() + g_hCVCacheTime.IntValue * 86400;
 
-		if(vacBanned)
+		bool vacBanned = numVACBans > 0 && g_hCVDetectVACBans.BoolValue;
+		bool gameBanned = numGameBans > 0 && g_hCVDetectGameBans.BoolValue;
+		communityBanned = communityBanned && g_hCVDetectCommunityBans.BoolValue;
+		bool econBanned = econStatus > 0 && g_hCVDetectEconBans.BoolValue;
+
+		if(vacBanned || gameBanned || communityBanned || econBanned)
 		{
 			banned = 1;
 			switch(g_hCVAction.IntValue)
@@ -426,7 +434,7 @@ public void OnQueryPlayerLookup(Database db, DBResultSet results, const char[] e
 			{
 				if(results.FetchInt(1) > 0)
 				{
-					HandleClient(client, friendID, true);
+					HandleClient(client, friendID, 1, 0, false, 0);
 				}
 			}
 		}
