@@ -103,6 +103,8 @@ ConVar g_hCVDetectGameBans = null;
 ConVar g_hCVDetectCommunityBans = null;
 ConVar g_hCVDetectEconBans = null;
 
+char g_dbConfig[64];
+
 public void OnPluginStart()
 {
 	CreateConVar("sm_vacbans_version", PLUGIN_VERSION, "VAC Ban Checker plugin version", FCVAR_SPONLY | FCVAR_REPLICATED | FCVAR_NOTIFY | FCVAR_DONTRECORD);
@@ -124,10 +126,11 @@ public void OnPluginStart()
 
 public void OnConfigsExecuted()
 {
-	if(g_hDatabase == null)
+	char db[64];
+	g_hCVDB.GetString(db, sizeof(db));
+	if(!StrEqual(g_dbConfig, db))
 	{
-		char db[64];
-		g_hCVDB.GetString(db, sizeof(db));
+		strcopy(g_dbConfig, sizeof(g_dbConfig), db);
 		Database.Connect(OnDBConnected, db);
 	}
 }
