@@ -145,7 +145,7 @@ public void OnClientPostAdminCheck(int client)
 	if(!IsFakeClient(client))
 	{
 		char query[256];
-		char steamID[32];
+		char steamID[18];
 
 		if(GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID)))
 		{
@@ -161,7 +161,7 @@ public void OnClientPostAdminCheck(int client)
 
 public int OnSocketConnected(Handle hSock, DataPack hPack)
 {
-	char steamID[32];
+	char steamID[18];
 	char requestStr[128];
 
 	hPack.Reset();
@@ -203,7 +203,7 @@ public int OnSocketDisconnected(Handle hSock, DataPack hPack)
 	}
 	TrimString(responseData);
 
-	char steamID[32];
+	char steamID[18];
 	hPack.ReadString(steamID, sizeof(steamID));
 
 	if(!StrEqual(responseData, "null", false))
@@ -249,7 +249,7 @@ public Action Command_Whitelist(int client, int args)
 	char argString[72];
 	char action[8];
 	char steamIDString[32];
-	char steamID[32];
+	char steamID[18];
 
 	GetCmdArgString(argString, sizeof(argString));
 	int pos = BreakString(argString, action, sizeof(action));
@@ -312,7 +312,7 @@ void HandleClient(int client, const char[] steamID, int numVACBans, int numGameB
 	if(IsClientAuthorized(client))
 	{
 		// Check to make sure this is the same client that originally connected
-		char clientSteamID[32];
+		char clientSteamID[18];
 		if(!GetClientAuthId(client, AuthId_SteamID64, clientSteamID, sizeof(clientSteamID)) || !StrEqual(steamID, clientSteamID))
 		{
 			return;
@@ -519,7 +519,7 @@ public void OnQueryMigrate(Database db, DBResultSet results, const char[] error,
 {
 	if(results != null)
 	{
-		char steamId[32];
+		char steamId[18];
 		char query[128];
 		while(results.FetchRow())
 		{
