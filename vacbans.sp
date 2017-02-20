@@ -102,7 +102,7 @@ char g_dbConfig[64];
 
 public void OnPluginStart()
 {
-	LoadTranslations("vacbans.phrases");
+	LoadTranslations("vacbans2.phrases");
 	char desc[128];
 
 	Format(desc, sizeof(desc), "%T", "ConVar_Version", LANG_SERVER);
