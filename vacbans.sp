@@ -117,7 +117,7 @@ public void OnPluginStart()
 	Format(desc, sizeof(desc), "%T", "ConVar_Detect_Community", LANG_SERVER);
 	g_hCVDetectCommunityBans = CreateConVar("sm_vacbans_detect_community_bans", "0", desc, _, true, 0.0, true, 1.0);
 	Format(desc, sizeof(desc), "%T", "ConVar_Detect_Econ", LANG_SERVER);
-	g_hCVDetectEconBans = CreateConVar("sm_vacbans_detect_econ_bans", "0", desc, _, true, 0.0, true, 1.0);
+	g_hCVDetectEconBans = CreateConVar("sm_vacbans_detect_econ_bans", "0", desc, _, true, 0.0, true, 2.0);
 	AutoExecConfig(true, "vacbans");
 
 	Format(desc, sizeof(desc), "%T", "Command_Reset", LANG_SERVER);
@@ -309,9 +309,10 @@ void HandleClient(int client, const char[] friendID, int numVACBans, int numGame
 		bool vacBanned = numVACBans > 0 && g_hCVDetectVACBans.BoolValue;
 		bool gameBanned = numGameBans > 0 && g_hCVDetectGameBans.BoolValue;
 		bool commBanned = communityBanned && g_hCVDetectCommunityBans.BoolValue;
-		bool econBanned = econStatus > 0 && g_hCVDetectEconBans.BoolValue;
+		bool econBanned = econStatus > 1 && g_hCVDetectEconBans.BoolValue;
+		bool econProbation = econStatus > 0 && g_hCVDetectEconBans.IntValue > 1;
 
-		if(vacBanned || gameBanned || commBanned || econBanned)
+		if(vacBanned || gameBanned || commBanned || econBanned || econProbation)
 		{
 			char reason[32];
 			if(vacBanned && numVACBans > 1)
@@ -334,11 +335,11 @@ void HandleClient(int client, const char[] friendID, int numVACBans, int numGame
 			{
 				reason = "Community_Ban";
 			}
-			else if(econBanned && econStatus > 1)
+			else if(econBanned)
 			{
 				reason = "Economy_Ban";
 			}
-			else if(econBanned)
+			else if(econProbation)
 			{
 				reason = "Economy_Probation";
 			}

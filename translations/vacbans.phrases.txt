@@ -30,7 +30,7 @@
 	}
 	"ConVar_Detect_Econ"
 	{
-		"en"		"Enable economy (trade) ban/probation detection"
+		"en"		"Enable economy (trade) ban detection (0 = disabled, 1 = bans only, 2 = bans and probation)"
 	}
 	"Command_Reset"
 	{
