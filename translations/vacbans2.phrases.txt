@@ -44,6 +44,10 @@
 	{
 		"en"		"Controls the vacbans whitelist"
 	}
+	"Command_List"
+	{
+		"en"		"Lists the bans of connected clients"
+	}
 	"Message_Reset"
 	{
 		"en"		"The VAC Status Checker cache has been reset"
@@ -65,6 +69,10 @@
 	"Message_Whitelist_Cleared"
 	{
 		"en"		"The VAC Status Checker whitelist was cleared"
+	}
+	"Message_List"
+	{
+		"en"		"Listing bans of all connected clients:"
 	}
 	"Error_Socket"
 	{

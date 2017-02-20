@@ -100,6 +100,11 @@ ConVar g_hCVDetectEconBans = null;
  */
 char g_dbConfig[64];
 
+/**
+ * The status cache for connected clients
+ */
+int g_clientStatus[MAXPLAYERS + 1][5];
+
 public void OnPluginStart()
 {
 	LoadTranslations("vacbans2.phrases");
@@ -130,6 +135,8 @@ public void OnPluginStart()
 	RegAdminCmd("sm_vacbans_reset", Command_Reset, ADMFLAG_RCON, desc);
 	Format(desc, sizeof(desc), "%T", "Command_Whitelist", LANG_SERVER);
 	RegAdminCmd("sm_vacbans_whitelist", Command_Whitelist, ADMFLAG_RCON, desc);
+	Format(desc, sizeof(desc), "%T", "Command_List", LANG_SERVER);
+	RegAdminCmd("sm_vacbans_list", Command_List, ADMFLAG_GENERIC, desc);
 }
 
 public void OnConfigsExecuted()
@@ -141,6 +148,11 @@ public void OnConfigsExecuted()
 		strcopy(g_dbConfig, sizeof(g_dbConfig), db);
 		Database.Connect(OnDBConnected, db);
 	}
+}
+
+public void OnClientConnected(int client)
+{
+	g_clientStatus[client] = {0, 0, 0, 0, 0};
 }
 
 public void OnClientPostAdminCheck(int client)
@@ -220,6 +232,12 @@ public int OnSocketDisconnected(Handle hSock, DataPack hPack)
 		bool communityBanned = count > 3 ? StringToInt(parts[3]) == 1 : false;
 		int econStatus = count > 4 ? StringToInt(parts[4]) : 0;
 
+		g_clientStatus[client][0] = vacBans;
+		g_clientStatus[client][1] = daysSinceLast;
+		g_clientStatus[client][2] = gameBans;
+		g_clientStatus[client][3] = communityBanned ? 1 : 0;
+		g_clientStatus[client][4] = econStatus;
+
 		HandleClient(client, steamID, vacBans, daysSinceLast, gameBans, communityBanned, econStatus, false);
 	}
 	else
@@ -298,6 +316,45 @@ public Action Command_Whitelist(int client, int args)
 
 	ReplyToCommand(client, "%t: sm_vacbans_whitelist <add|remove|clear> [SteamID]", "Message_Usage");
 	return Plugin_Handled;
+}
+
+public Action Command_List(int client, int args)
+{
+	ReplyToCommand(client, "[SM] %t", "Message_List");
+
+	int status[5];
+	char commStatusText[16];
+	char econStatusText[24];
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		if(IsClientAuthorized(i))
+		{
+			status = g_clientStatus[i];
+			if(status[0] > 0 || status[2] > 0 || status[3] > 0 || status[4] > 0)
+			{
+				if(status[3] > 0)
+				{
+					commStatusText = "Status_Banned";
+				}
+				else
+				{
+					commStatusText = "Status_None";
+				}
+
+				switch(status[4])
+				{
+					case 1:
+						econStatusText = "Status_Probation";
+					case 2:
+						econStatusText = "Status_Banned";
+					default:
+						econStatusText = "Status_None";
+				}
+
+				ReplyToCommand(client, " - %N (%t)", i, "Admin_Message", status[0], status[2], commStatusText, econStatusText);
+			}
+		}
+	}
 }
 
 /**
@@ -549,7 +606,7 @@ public void OnQueryPlayerLookup(Database db, DBResultSet results, const char[] e
 
 	data.Reset();
 	int client = data.ReadCell();
-	char steamID[32];
+	char steamID[18];
 	data.ReadString(steamID, sizeof(steamID));
 	delete data;
 
@@ -558,11 +615,19 @@ public void OnQueryPlayerLookup(Database db, DBResultSet results, const char[] e
 		if(results.FetchRow())
 		{
 			checked = true;
+
+			g_clientStatus[client][0] = results.FetchInt(1);
+			g_clientStatus[client][1] = (GetTime() - results.FetchInt(2)) / 86400;
+			g_clientStatus[client][2] = results.FetchInt(3);
+			g_clientStatus[client][3] = results.FetchInt(4);
+			g_clientStatus[client][4] = results.FetchInt(5);
+
 			if(results.FetchInt(6) == 0)
 			{
 				// Player is whitelisted
 				return;
 			}
+
 			HandleClient(client, steamID, results.FetchInt(1), (GetTime() - results.FetchInt(2)) / 86400, results.FetchInt(3), results.FetchInt(4) == 1, results.FetchInt(5), true);
 		}
 	}
