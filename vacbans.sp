@@ -82,7 +82,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.4.3"
+#define PLUGIN_VERSION "2.0.0"
 #define DATABASE_VERSION 1
 
 public Plugin myinfo = 
@@ -373,7 +373,7 @@ void HandleClient(int client, const char[] friendID, int numVACBans, int numGame
 				default:
 					econStatusText = "Status_None";
 			}
-			
+
 			switch(g_hCVAction.IntValue)
 			{
 				case 0:
