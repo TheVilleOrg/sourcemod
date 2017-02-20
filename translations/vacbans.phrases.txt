@@ -42,7 +42,7 @@
 	}
 	"Message_Reset"
 	{
-		"en"		"The VAC Status Checker cache has been reset."
+		"en"		"The VAC Status Checker cache has been reset"
 	}
 	"Message_Usage"
 	{
@@ -51,16 +51,16 @@
 	"Message_Whitelist_Added"
 	{
 		"#format"	"{1:s}"
-		"en"		"{1} was added to the VAC Status Checker whitelist."
+		"en"		"{1} was added to the VAC Status Checker whitelist"
 	}
 	"Message_Whitelist_Removed"
 	{
 		"#format"	"{1:s}"
-		"en"		"{1} was removed from the VAC Status Checker whitelist."
+		"en"		"{1} was removed from the VAC Status Checker whitelist"
 	}
 	"Message_Whitelist_Cleared"
 	{
-		"en"		"The VAC Status Checker whitelist was cleared."
+		"en"		"The VAC Status Checker whitelist was cleared"
 	}
 	"Error_Socket"
 	{
@@ -78,12 +78,12 @@
 	"Log_Banned"
 	{
 		"#format"	"{1:s},{2:t}"
-		"en"		"{1} was banned due to {2} on record."
+		"en"		"{1} was banned due to {2} on record"
 	}
 	"Player_Message"
 	{
 		"#format"	"{1:t},{2:t}"
-		"en"		"You were {1} due to {2} on your account."
+		"en"		"You were {1} due to {2} on your account"
 	}
 	"Admin_Message"
 	{
