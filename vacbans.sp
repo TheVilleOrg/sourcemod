@@ -102,7 +102,7 @@ char g_dbConfig[64];
 public void OnPluginStart()
 {
 	LoadTranslations("vacbans.phrases");
-	char desc[256];
+	char desc[128];
 
 	Format(desc, sizeof(desc), "%T", "ConVar_Version", LANG_SERVER);
 	CreateConVar("sm_vacbans_version", PLUGIN_VERSION, desc, FCVAR_SPONLY | FCVAR_REPLICATED | FCVAR_NOTIFY | FCVAR_DONTRECORD);
@@ -144,7 +144,7 @@ public void OnClientPostAdminCheck(int client)
 {
 	if(!IsFakeClient(client))
 	{
-		char query[1024];
+		char query[256];
 		char steamID[32];
 
 		if(GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID)))
@@ -190,8 +190,8 @@ public int OnSocketDisconnected(Handle hSock, DataPack hPack)
 
 	hData.Reset();
 
-	char responseData[512];
-	char buffer[512];
+	char responseData[1024];
+	char buffer[1024];
 	while(hData.IsReadable()) {
 		hData.ReadString(buffer, sizeof(buffer));
 		StrCat(responseData, sizeof(responseData), buffer);
@@ -208,7 +208,7 @@ public int OnSocketDisconnected(Handle hSock, DataPack hPack)
 
 	if(!StrEqual(responseData, "null", false))
 	{
-		char parts[4][10];
+		char parts[4][8];
 		int count = ExplodeString(responseData, ",", parts, sizeof(parts), sizeof(parts[]), false);
 
 		int vacBans = count > 0 ? StringToInt(parts[0]) : 0;
@@ -248,8 +248,8 @@ public Action Command_Whitelist(int client, int args)
 {
 	char argString[72];
 	char action[8];
-	char steamIDString[64];
-	char steamID[64];
+	char steamIDString[32];
+	char steamID[32];
 
 	GetCmdArgString(argString, sizeof(argString));
 	int pos = BreakString(argString, action, sizeof(action));
@@ -259,7 +259,7 @@ public Action Command_Whitelist(int client, int args)
 
 		if(GetSteamID64(steamIDString, steamID, sizeof(steamID)))
 		{
-			char query[1024];
+			char query[128];
 			if(StrEqual(action, "add"))
 			{
 				Format(query, sizeof(query), "REPLACE INTO `vacbans_cache` (`steam_id`, `expire`) VALUES ('%s', 0);", steamID);
@@ -412,7 +412,7 @@ void HandleClient(int client, const char[] steamID, int numVACBans, int numGameB
 
 		if(!fromCache)
 		{
-			char query[1024];
+			char query[256];
 			Format(query, sizeof(query), "REPLACE INTO `vacbans_cache` VALUES ('%s', %d, %d, %d, %d, %d);", steamID, numVACBans, numGameBans, communityBanned ? 1 : 0, econStatus, expire);
 			g_hDatabase.Query(OnQueryNoOp, query);
 		}
@@ -505,7 +505,7 @@ public void OnQueryVersionCheck(Database db, DBResultSet results, const char[] e
 
 public void OnQueryVersionCreated(Database db, DBResultSet results, const char[] error, any data)
 {
-	char query[512];
+	char query[64];
 	Format(query, sizeof(query), "INSERT INTO `vacbans_version` VALUES (%d);", DATABASE_VERSION);
 	g_hDatabase.Query(OnQueryNoOp, query);
 }
@@ -520,7 +520,7 @@ public void OnQueryMigrate(Database db, DBResultSet results, const char[] error,
 	if(results != null)
 	{
 		char steamId[32];
-		char query[512];
+		char query[128];
 		while(results.FetchRow())
 		{
 			results.FetchString(0, steamId, sizeof(steamId));
