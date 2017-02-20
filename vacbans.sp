@@ -94,6 +94,9 @@ ConVar g_hCVDetectGameBans = null;
 ConVar g_hCVDetectCommunityBans = null;
 ConVar g_hCVDetectEconBans = null;
 
+/**
+ * The name of the database configuration
+ */
 char g_dbConfig[64];
 
 public void OnPluginStart()
@@ -293,6 +296,17 @@ public Action Command_Whitelist(int client, int args)
 	return Plugin_Handled;
 }
 
+/**
+ * Handle the results of a lookup.
+ *
+ * @param client          The client index
+ * @param friendID        The client's 64 bit SteamID
+ * @param numVACBans      The number of VAC bans on record
+ * @param numGameBans     The number of game bans on record
+ * @param communityBanned Whether the account is banned from the Steam Community
+ * @param econStatus      The account economy ban status (0 = none, 1 = probation, 2 = banned)
+ * @param fromCache       Whether the results came from the cache
+ */
 void HandleClient(int client, const char[] friendID, int numVACBans, int numGameBans, bool communityBanned, int econStatus, bool fromCache)
 {
 	if(IsClientAuthorized(client))
@@ -405,6 +419,13 @@ void HandleClient(int client, const char[] friendID, int numVACBans, int numGame
 	}
 }
 
+/**
+ * Get the 64 bit Steam ID from a text format.
+ *
+ * @param AuthID   The Steam ID as a string
+ * @param FriendID Buffer to store the result
+ * @param size     The length of the result buffer
+ */
 bool GetFriendID(char[] AuthID, char[] FriendID, int size)
 {
 	char toks[3][18];
