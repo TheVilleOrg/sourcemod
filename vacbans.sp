@@ -4,9 +4,9 @@
  * http://forums.alliedmods.net/showthread.php?t=80942
  *
  * Description:
- * Looks up VAC Status of connecting clients using the Steam
- * Community and takes the desired action. Useful for admins who want to
- * block access to people caught cheating on another engine.
+ * Checks for VAC, game, Steam Community, and trade bans on the accounts of connecting clients and
+ * takes the desired action. Useful for admins who want to block access to people for bad behavior
+ * outside the server.
  * 
  * Requires Socket Extension by sfPlayer
  * (http://forums.alliedmods.net/showthread.php?t=67640)
@@ -15,16 +15,6 @@
  *   voogru - finding the relationship between SteamIDs and friendIDs
  *   StrontiumDog - the fixed function that converts SteamIDs
  *   berni - the original function that converts SteamIDs
- *   Sillium - German translation
- *   jack_wade - Spanish translation
- *   Tournevis_man - French translation
- *   OziOn - Danish translation
- *   danielsumi - Portuguese translation
- *   Archangel_Dm - Russian translation
- *   lhffan - Swedish translation
- *   ZuCChiNi - Turkish translation
- *   allienaded - Finnish translation
- *   Wilczek - Polish translation
  *   r3dw3r3w0lf - admin alert code
  * 
  * Changelog
@@ -46,33 +36,33 @@
  * Sep 04, 2011 - v.1.3.4:
  *   [*] Fixed some race conditions
  * Feb 09, 2010 - v.1.3.3:
- *    [+] Added filter for bots on client checks
+ *   [+] Added filter for bots on client checks
  * Jul 24, 2009 - v.1.3.2:
- *    [*] Fixed logging error
+ *   [*] Fixed logging error
  * Jul 18, 2009 - v.1.3.1:
- * 	  [*] Removed format from translations to fix odd error
+ *   [*] Removed format from translations to fix odd error
  * May 25, 2009 - v.1.3.0:
- * 	  [+] Added support for other named database configs
+ *   [+] Added support for other named database configs
  * Apr 13, 2009 - v.1.2.1:
- * 	  [*] Fixed conversion of long SteamIDs (StrontiumDog)
+ *   [*] Fixed conversion of long SteamIDs (StrontiumDog)
  * Mar 26, 2009 - v.1.2.0:
- * 	  [+] Added whitelist support
- * 	  [*] Changed some messages to reflect the plugin name
+ *   [+] Added whitelist support
+ *   [*] Changed some messages to reflect the plugin name
  * Mar 19, 2009 - v.1.1.1:
- *    [*] Fixed bans triggering before client is in-game
- * 	  [-] Removed dependency on the regex extension
- * 	  [+] Added logging to vacbans.log for all action settings
+ *   [*] Fixed bans triggering before client is in-game
+ *   [-] Removed dependency on the regex extension
+ *   [+] Added logging to vacbans.log for all action settings
  * Feb 23, 2009 - v.1.1.0:
- * 	  [*] Now uses DataPacks instead of files for data storage
- * 	  [+] Added RegEx to scan raw downloaded data
- * 	  [+] Verifies client against original ID after scanning profile
- * 	  [*] Now uses FriendID instead of SteamID for the database keys
- * 	  [*] Various code organization improvements
- * 	  [+] Added command to reset the local cache database
+ *   [*] Now uses DataPacks instead of files for data storage
+ *   [+] Added RegEx to scan raw downloaded data
+ *   [+] Verifies client against original ID after scanning profile
+ *   [*] Now uses FriendID instead of SteamID for the database keys
+ *   [*] Various code organization improvements
+ *   [+] Added command to reset the local cache database
  * Feb 19, 2009 - v.1.0.1:
- * 	  [*] Changed file naming to avoid conflicts
+ *   [*] Changed file naming to avoid conflicts
  * Nov 24, 2008 - v.1.0.0:
- * 	  [*] Initial Release
+ *   [*] Initial Release
  * 
  */
 
