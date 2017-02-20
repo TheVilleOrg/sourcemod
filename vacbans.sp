@@ -131,12 +131,38 @@ public void OnPluginStart()
 	g_hCVDetectEconBans = CreateConVar("sm_vacbans_detect_econ_bans", "0", desc, _, true, 0.0, true, 2.0);
 	AutoExecConfig(true, "vacbans");
 
+	g_hCVDB.AddChangeHook(OnDBConVarChanged);
+	g_hCVAction.AddChangeHook(OnConVarChanged);
+	g_hCVDetectVACBans.AddChangeHook(OnConVarChanged);
+	g_hCVVACExpire.AddChangeHook(OnConVarChanged);
+	g_hCVDetectGameBans.AddChangeHook(OnConVarChanged);
+	g_hCVDetectCommunityBans.AddChangeHook(OnConVarChanged);
+	g_hCVDetectEconBans.AddChangeHook(OnConVarChanged);
+
 	Format(desc, sizeof(desc), "%T", "Command_Reset", LANG_SERVER);
 	RegAdminCmd("sm_vacbans_reset", Command_Reset, ADMFLAG_RCON, desc);
 	Format(desc, sizeof(desc), "%T", "Command_Whitelist", LANG_SERVER);
 	RegAdminCmd("sm_vacbans_whitelist", Command_Whitelist, ADMFLAG_RCON, desc);
 	Format(desc, sizeof(desc), "%T", "Command_List", LANG_SERVER);
 	RegAdminCmd("sm_vacbans_list", Command_List, ADMFLAG_GENERIC, desc);
+}
+
+public void OnDBConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
+{
+	strcopy(g_dbConfig, sizeof(g_dbConfig), newValue);
+	Database.Connect(OnDBConnected, newValue);
+}
+
+public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
+{
+	char steamID[18];
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		if(IsClientAuthorized(i) && GetClientAuthId(i, AuthId_SteamID64, steamID, sizeof(steamID)))
+		{
+			HandleClient(i, steamID, true);
+		}
+	}
 }
 
 public void OnConfigsExecuted()
