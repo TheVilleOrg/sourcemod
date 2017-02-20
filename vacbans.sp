@@ -161,15 +161,15 @@ public void OnClientPostAdminCheck(int client)
 
 public int OnSocketConnected(Handle hSock, DataPack hPack)
 {
-	char friendID[32];
+	char steamID[32];
 	char requestStr[128];
 
 	hPack.Reset();
 	hPack.ReadCell();
 	hPack.ReadCell();
-	hPack.ReadString(friendID, sizeof(friendID));
+	hPack.ReadString(steamID, sizeof(steamID));
 
-	Format(requestStr, sizeof(requestStr), "GET /vacbans/v1/check/%s HTTP/1.0\r\nHost: %s\r\nConnection: close\r\n\r\n", friendID, "dev.stevotvr.com");
+	Format(requestStr, sizeof(requestStr), "GET /vacbans/v1/check/%s HTTP/1.0\r\nHost: %s\r\nConnection: close\r\n\r\n", steamID, "dev.stevotvr.com");
 	SocketSend(hSock, requestStr);
 }
 
@@ -203,8 +203,8 @@ public int OnSocketDisconnected(Handle hSock, DataPack hPack)
 	}
 	TrimString(responseData);
 
-	char friendID[32];
-	hPack.ReadString(friendID, sizeof(friendID));
+	char steamID[32];
+	hPack.ReadString(steamID, sizeof(steamID));
 
 	if(!StrEqual(responseData, "null", false))
 	{
@@ -216,11 +216,11 @@ public int OnSocketDisconnected(Handle hSock, DataPack hPack)
 		bool communityBanned = count > 2 ? StringToInt(parts[2]) == 1 : false;
 		int econStatus = count > 3 ? StringToInt(parts[3]) : 0;
 
-		HandleClient(client, friendID, vacBans, gameBans, communityBanned, econStatus, false);
+		HandleClient(client, steamID, vacBans, gameBans, communityBanned, econStatus, false);
 	}
 	else
 	{
-		HandleClient(client, friendID, 0, 0, false, 0, false);
+		HandleClient(client, steamID, 0, 0, false, 0, false);
 	}
 
 	delete hData;
@@ -248,33 +248,33 @@ public Action Command_Whitelist(int client, int args)
 {
 	char argString[72];
 	char action[8];
+	char steamIDString[64];
 	char steamID[64];
-	char friendID[64];
 
 	GetCmdArgString(argString, sizeof(argString));
 	int pos = BreakString(argString, action, sizeof(action));
 	if(pos > -1)
 	{
-		strcopy(steamID, sizeof(steamID), argString[pos]);
+		strcopy(steamIDString, sizeof(steamIDString), argString[pos]);
 
-		if(GetFriendID(steamID, friendID, sizeof(friendID)))
+		if(GetSteamID64(steamIDString, steamID, sizeof(steamID)))
 		{
 			char query[1024];
 			if(StrEqual(action, "add"))
 			{
-				Format(query, sizeof(query), "REPLACE INTO `vacbans_cache` (`steam_id`, `expire`) VALUES ('%s', 0);", friendID);
+				Format(query, sizeof(query), "REPLACE INTO `vacbans_cache` (`steam_id`, `expire`) VALUES ('%s', 0);", steamID);
 				g_hDatabase.Query(OnQueryNoOp, query);
 
-				ReplyToCommand(client, "[SM] %t", "Message_Whitelist_Added", steamID);
+				ReplyToCommand(client, "[SM] %t", "Message_Whitelist_Added", steamIDString);
 
 				return Plugin_Handled;
 			}
 			if(StrEqual(action, "remove"))
 			{
-				Format(query, sizeof(query), "DELETE FROM `vacbans_cache` WHERE `steam_id` = '%s';", friendID);
+				Format(query, sizeof(query), "DELETE FROM `vacbans_cache` WHERE `steam_id` = '%s';", steamID);
 				g_hDatabase.Query(OnQueryNoOp, query);
 
-				ReplyToCommand(client, "[SM] %t", "Message_Whitelist_Removed", steamID);
+				ReplyToCommand(client, "[SM] %t", "Message_Whitelist_Removed", steamIDString);
 
 				return Plugin_Handled;
 			}
@@ -300,20 +300,20 @@ public Action Command_Whitelist(int client, int args)
  * Handle the results of a lookup.
  *
  * @param client          The client index
- * @param friendID        The client's 64 bit SteamID
+ * @param steamID         The client's 64 bit SteamID
  * @param numVACBans      The number of VAC bans on record
  * @param numGameBans     The number of game bans on record
  * @param communityBanned Whether the account is banned from the Steam Community
  * @param econStatus      The account economy ban status (0 = none, 1 = probation, 2 = banned)
  * @param fromCache       Whether the results came from the cache
  */
-void HandleClient(int client, const char[] friendID, int numVACBans, int numGameBans, bool communityBanned, int econStatus, bool fromCache)
+void HandleClient(int client, const char[] steamID, int numVACBans, int numGameBans, bool communityBanned, int econStatus, bool fromCache)
 {
 	if(IsClientAuthorized(client))
 	{
 		// Check to make sure this is the same client that originally connected
-		char clientFriendID[32];
-		if(!GetClientAuthId(client, AuthId_SteamID64, clientFriendID, sizeof(clientFriendID)) || !StrEqual(friendID, clientFriendID))
+		char clientSteamID[32];
+		if(!GetClientAuthId(client, AuthId_SteamID64, clientSteamID, sizeof(clientSteamID)) || !StrEqual(steamID, clientSteamID))
 		{
 			return;
 		}
@@ -413,7 +413,7 @@ void HandleClient(int client, const char[] friendID, int numVACBans, int numGame
 		if(!fromCache)
 		{
 			char query[1024];
-			Format(query, sizeof(query), "REPLACE INTO `vacbans_cache` VALUES ('%s', %d, %d, %d, %d, %d);", friendID, numVACBans, numGameBans, communityBanned ? 1 : 0, econStatus, expire);
+			Format(query, sizeof(query), "REPLACE INTO `vacbans_cache` VALUES ('%s', %d, %d, %d, %d, %d);", steamID, numVACBans, numGameBans, communityBanned ? 1 : 0, econStatus, expire);
 			g_hDatabase.Query(OnQueryNoOp, query);
 		}
 	}
@@ -422,62 +422,62 @@ void HandleClient(int client, const char[] friendID, int numVACBans, int numGame
 /**
  * Get the 64 bit Steam ID from a text format.
  *
- * @param AuthID   The Steam ID as a string
- * @param FriendID Buffer to store the result
- * @param size     The length of the result buffer
+ * @param steamIDString The Steam ID as a string
+ * @param steamID64     Buffer to store the result
+ * @param maxlen        The maximum length of the result buffer
  */
-bool GetFriendID(char[] AuthID, char[] FriendID, int size)
+bool GetSteamID64(const char[] steamIDString, char[] steamID64, int maxlen)
 {
 	char toks[3][18];
-	int parts = ExplodeString(AuthID, ":", toks, sizeof(toks), sizeof(toks[]));
-	int iFriendID;
+	int parts = ExplodeString(steamIDString, ":", toks, sizeof(toks), sizeof(toks[]));
+	int iSteamID;
 	if(parts == 3)
 	{
 		if(StrContains(toks[0], "STEAM_", false) >= 0)
 		{
 			int iServer = StringToInt(toks[1]);
 			int iAuthID = StringToInt(toks[2]);
-			iFriendID = (iAuthID*2) + 60265728 + iServer;
+			iSteamID = (iAuthID*2) + 60265728 + iServer;
 		}
 		else if(StrEqual(toks[0], "[U", false))
 		{
 			ReplaceString(toks[2], sizeof(toks[]), "]", "");
 			int iAuthID = StringToInt(toks[2]);
-			iFriendID = iAuthID + 60265728;
+			iSteamID = iAuthID + 60265728;
 		}
 		else
 		{
-			FriendID[0] = '\0';
+			steamID64[0] = '\0';
 			return false;
 		}
 	}
 	else if(strlen(toks[0]) == 17 && IsCharNumeric(toks[0][0]))
 	{
-		strcopy(FriendID, size, AuthID);
+		strcopy(steamID64, maxlen, steamIDString);
 		return true;
 	}
 	else
 	{
-		FriendID[0] = '\0';
+		steamID64[0] = '\0';
 		return false;
 	}
 
-	if (iFriendID >= 100000000)
+	if (iSteamID >= 100000000)
 	{
 		int upper = 765611979;
 		char temp[12], carry[12];
 
-		Format(temp, sizeof(temp), "%d", iFriendID);
+		Format(temp, sizeof(temp), "%d", iSteamID);
 		Format(carry, 2, "%s", temp);
 		int icarry = StringToInt(carry[0]);
 		upper += icarry;
 
-		Format(temp, sizeof(temp), "%d", iFriendID);
-		Format(FriendID, size, "%d%s", upper, temp[1]);
+		Format(temp, sizeof(temp), "%d", iSteamID);
+		Format(steamID64, maxlen, "%d%s", upper, temp[1]);
 	}
 	else
 	{
-		Format(FriendID, size, "765611979%d", iFriendID);
+		Format(steamID64, maxlen, "765611979%d", iSteamID);
 	}
 
 	return true;
@@ -537,8 +537,8 @@ public void OnQueryPlayerLookup(Database db, DBResultSet results, const char[] e
 
 	data.Reset();
 	int client = data.ReadCell();
-	char friendID[32];
-	data.ReadString(friendID, sizeof(friendID));
+	char steamID[32];
+	data.ReadString(steamID, sizeof(steamID));
 	delete data;
 
 	if(results != null)
@@ -551,7 +551,7 @@ public void OnQueryPlayerLookup(Database db, DBResultSet results, const char[] e
 				// Player is whitelisted
 				return;
 			}
-			HandleClient(client, friendID, results.FetchInt(1), results.FetchInt(2), results.FetchInt(3) == 1, results.FetchInt(4), true);
+			HandleClient(client, steamID, results.FetchInt(1), results.FetchInt(2), results.FetchInt(3) == 1, results.FetchInt(4), true);
 		}
 	}
 
@@ -563,7 +563,7 @@ public void OnQueryPlayerLookup(Database db, DBResultSet results, const char[] e
 
 		hPack.WriteCell(client);
 		hPack.WriteCell(hData);
-		hPack.WriteString(friendID);
+		hPack.WriteString(steamID);
 
 		SocketSetArg(hSock, hPack);
 		SocketConnect(hSock, OnSocketConnected, OnSocketReceive, OnSocketDisconnected, "dev.stevotvr.com", 80);
