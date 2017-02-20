@@ -558,7 +558,7 @@ public void OnQueryPlayerLookup(Database db, DBResultSet results, const char[] e
 		if(results.FetchRow())
 		{
 			checked = true;
-			if(results.IsFieldNull(1))
+			if(results.FetchInt(6) == 0)
 			{
 				// Player is whitelisted
 				return;
