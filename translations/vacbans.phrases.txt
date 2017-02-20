@@ -20,6 +20,10 @@
 	{
 		"en"		"Enable VAC ban detection"
 	}
+	"ConVar_VAC_Expire"
+	{
+		"en"		"Ignore VAC bans older than this many days (0 = disabled)"
+	}
 	"ConVar_Detect_Game"
 	{
 		"en"		"Enable game ban detection"
