@@ -159,7 +159,7 @@ public void OnClientPostAdminCheck(int client)
 {
 	if(!IsFakeClient(client))
 	{
-		char query[256];
+		char query[96];
 		char steamID[18];
 
 		if(GetClientAuthId(client, AuthId_SteamID64, steamID, sizeof(steamID)))
@@ -168,7 +168,7 @@ public void OnClientPostAdminCheck(int client)
 			hPack.WriteCell(client);
 			hPack.WriteString(steamID);
 
-			Format(query, sizeof(query), "SELECT * FROM `vacbans_cache` WHERE `steam_id` = '%s' AND (`expire` > %d OR `expire` = 0) LIMIT 1;", steamID, GetTime());
+			Format(query, sizeof(query), "SELECT * FROM `vacbans_cache` WHERE `steam_id` = '%s' LIMIT 1;", steamID);
 			g_hDatabase.Query(OnQueryPlayerLookup, query, hPack);
 		}
 	}
@@ -202,6 +202,8 @@ public int OnSocketDisconnected(Handle hSock, DataPack hPack)
 	hPack.Reset();
 	int client = hPack.ReadCell();
 	DataPack hData = hPack.ReadCell();
+	char steamID[18];
+	hPack.ReadString(steamID, sizeof(steamID));
 
 	hData.Reset();
 
@@ -214,11 +216,9 @@ public int OnSocketDisconnected(Handle hSock, DataPack hPack)
 
 	if(!ParseResponse(responseData, responseData, sizeof(responseData)))
 	{
+		HandleClient(client, steamID, true);
 		return;
 	}
-
-	char steamID[18];
-	hPack.ReadString(steamID, sizeof(steamID));
 
 	if(!StrEqual(responseData, "null", false))
 	{
@@ -237,11 +237,7 @@ public int OnSocketDisconnected(Handle hSock, DataPack hPack)
 		g_clientStatus[client][3] = communityBanned ? 1 : 0;
 		g_clientStatus[client][4] = econStatus;
 
-		HandleClient(client, steamID, vacBans, daysSinceLast, gameBans, communityBanned, econStatus, false);
-	}
-	else
-	{
-		HandleClient(client, steamID, 0, 0, 0, false, 0, false);
+		HandleClient(client, steamID, false);
 	}
 
 	delete hData;
@@ -253,6 +249,14 @@ public int OnSocketDisconnected(Handle hSock, DataPack hPack)
 public int OnSocketError(Handle hSock, const int errorType, const int errorNum, DataPack hPack)
 {
 	LogError("%T", "Error_Socket", LANG_SERVER, errorType, errorNum);
+
+	hPack.Reset();
+	int client = hPack.ReadCell();
+	hPack.ReadCell();
+	char steamID[18];
+	hPack.ReadString(steamID, sizeof(steamID));
+
+	HandleClient(client, steamID, true);
 
 	delete hPack;
 	delete hSock;
@@ -396,16 +400,11 @@ bool ParseResponse(const char[] response, char[] buffer, int maxlen)
 /**
  * Handle the results of a lookup.
  *
- * @param client           The client index
- * @param steamID          The client's 64 bit SteamID
- * @param numVACBans       The number of VAC bans on record
- * @param daysSinceLastVAC The number of days since the last VAC ban
- * @param numGameBans      The number of game bans on record
- * @param communityBanned  Whether the account is banned from the Steam Community
- * @param econStatus       The account economy ban status (0 = none, 1 = probation, 2 = banned)
- * @param fromCache        Whether the results came from the cache
+ * @param client    The client index
+ * @param steamID   The client's 64 bit SteamID
+ * @param fromCache Whether the results came from the cache
  */
-void HandleClient(int client, const char[] steamID, int numVACBans, int daysSinceLastVAC, int numGameBans, bool communityBanned, int econStatus, bool fromCache)
+void HandleClient(int client, const char[] steamID, bool fromCache)
 {
 	if(IsClientAuthorized(client))
 	{
@@ -416,7 +415,11 @@ void HandleClient(int client, const char[] steamID, int numVACBans, int daysSinc
 			return;
 		}
 
-		int expire = GetTime() + g_hCVCacheTime.IntValue * 86400;
+		int numVACBans = g_clientStatus[client][0];
+		int daysSinceLastVAC = g_clientStatus[client][1];
+		int numGameBans = g_clientStatus[client][2];
+		bool communityBanned = g_clientStatus[client][3] == 1;
+		int econStatus = g_clientStatus[client][4];
 
 		bool vacBanned = numVACBans > 0 && g_hCVDetectVACBans.BoolValue;
 		bool gameBanned = numGameBans > 0 && g_hCVDetectGameBans.BoolValue;
@@ -515,6 +518,7 @@ void HandleClient(int client, const char[] steamID, int numVACBans, int daysSinc
 
 		if(!fromCache)
 		{
+			int expire = GetTime() + g_hCVCacheTime.IntValue * 86400;
 			char query[256];
 			Format(query, sizeof(query), "REPLACE INTO `vacbans_cache` VALUES ('%s', %d, %d, %d, %d, %d, %d);", steamID, numVACBans, GetTime() - daysSinceLastVAC * 86400, numGameBans, communityBanned ? 1 : 0, econStatus, expire);
 			g_hDatabase.Query(OnQueryNoOp, query);
@@ -650,7 +654,7 @@ public void OnQueryPlayerLookup(Database db, DBResultSet results, const char[] e
 	{
 		if(results.FetchRow())
 		{
-			checked = true;
+			checked = results.FetchInt(6) > GetTime();
 
 			g_clientStatus[client][0] = results.FetchInt(1);
 			g_clientStatus[client][1] = (GetTime() - results.FetchInt(2)) / 86400;
@@ -663,12 +667,15 @@ public void OnQueryPlayerLookup(Database db, DBResultSet results, const char[] e
 				// Player is whitelisted
 				return;
 			}
-
-			HandleClient(client, steamID, results.FetchInt(1), (GetTime() - results.FetchInt(2)) / 86400, results.FetchInt(3), results.FetchInt(4) == 1, results.FetchInt(5), true);
 		}
 	}
 
-	if(!checked)
+	if(checked)
+	{
+		HandleClient(client, steamID, true);
+
+	}
+	else
 	{
 		DataPack hPack = new DataPack();
 		DataPack hData = new DataPack();
