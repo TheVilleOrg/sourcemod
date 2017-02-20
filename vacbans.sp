@@ -79,7 +79,7 @@ public Plugin myinfo =
 {
 	name = "VAC Status Checker",
 	author = "Stevo.TVR",
-	description = "Looks up VAC status of connecting clients and takes desired action",
+	description = "Checks for VAC, game, Steam Community, and trade bans on the accounts of connecting clients",
 	version = PLUGIN_VERSION,
 	url = "http://www.theville.org"
 }
