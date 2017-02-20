@@ -508,8 +508,8 @@ public void OnQueryVersionCheck(Database db, DBResultSet results, const char[] e
 {
 	if(results == null || !results.FetchRow())
 	{
-		g_hDatabase.Query(OnQueryVersionCreated, "CREATE TABLE IF NOT EXISTS `vacbans_version` (`version` INT(11) NOT NULL);");
-		g_hDatabase.Query(OnQueryCacheCreated, "CREATE TABLE IF NOT EXISTS `vacbans_cache` (`steam_id` VARCHAR(64) NOT NULL, `vac_bans` INT(11), `last_vac_time` INT(11), `game_bans` INT(11), `community_banned` BOOL, `econ_status` INT(11), `expire` INT(11) NOT NULL, PRIMARY KEY (`steam_id`));");
+		g_hDatabase.Query(OnQueryVersionCreated, "CREATE TABLE `vacbans_version` (`version` INT(11) NOT NULL);");
+		g_hDatabase.Query(OnQueryCacheCreated, "CREATE TABLE `vacbans_cache` (`steam_id` VARCHAR(64) NOT NULL, `vac_bans` INT(11), `last_vac_time` INT(11), `game_bans` INT(11), `community_banned` BOOL, `econ_status` INT(11), `expire` INT(11) NOT NULL, PRIMARY KEY (`steam_id`));");
 	}
 }
 
@@ -522,7 +522,10 @@ public void OnQueryVersionCreated(Database db, DBResultSet results, const char[]
 
 public void OnQueryCacheCreated(Database db, DBResultSet results, const char[] error, any data)
 {
-	g_hDatabase.Query(OnQueryMigrate, "SELECT `steam_id` FROM `vacbans` WHERE `banned` = 0 AND `expire` = 0;");
+	if(results != null)
+	{
+		g_hDatabase.Query(OnQueryMigrate, "SELECT `steam_id` FROM `vacbans` WHERE `banned` = 0 AND `expire` = 0;");
+	}
 }
 
 public void OnQueryMigrate(Database db, DBResultSet results, const char[] error, any data)
@@ -537,7 +540,6 @@ public void OnQueryMigrate(Database db, DBResultSet results, const char[] error,
 			Format(query, sizeof(query), "INSERT INTO `vacbans_cache` (`steam_id`, `expire`) VALUES ('%s', 0);", steamId);
 			g_hDatabase.Query(OnQueryNoOp, query);
 		}
-		g_hDatabase.Query(OnQueryNoOp, "DROP TABLE `vacbans`;");
 	}
 }
 
