@@ -1,15 +1,3 @@
 ﻿"Phrases"
 {
-	"Kicked"
-	{
-		"pt"		"Voce foi expulso devido a uma violacao VAC anterior."
-	}
-	"Banned"
-	{
-		"pt"		"Voce foi banido devido a uma violacao VAC anterior."
-	}
-	"Banned_Server"
-	{
-		"pt"		"banido devido a uma violacao VAC anterior."
-	}
 }

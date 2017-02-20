@@ -1,15 +1,133 @@
 ﻿"Phrases"
 {
+	"ConVar_Version"
+	{
+		"en"		"VAC Ban Checker plugin version"
+	}
+	"ConVar_DB"
+	{
+		"en"		"The named database config to use for caching"
+	}
+	"ConVar_CacheTime"
+	{
+		"en"		"How long in days before re-checking the same client"
+	}
+	"ConVar_Action"
+	{
+		"en"		"Action to take on detected clients (0 = ban, 1 = kick, 2 = alert admins, 3 = log only)"
+	}
+	"ConVar_Detect_VAC"
+	{
+		"en"		"Enable VAC ban detection"
+	}
+	"ConVar_Detect_Game"
+	{
+		"en"		"Enable game ban detection"
+	}
+	"ConVar_Detect_Community"
+	{
+		"en"		"Enable Steam Community ban detection"
+	}
+	"ConVar_Detect_Econ"
+	{
+		"en"		"Enable economy (trade) ban/probation detection"
+	}
+	"Command_Reset"
+	{
+		"en"		"Clears the vacbans cache database"
+	}
+	"Command_Whitelist"
+	{
+		"en"		"Controls the vacbans whitelist"
+	}
+	"Message_Reset"
+	{
+		"en"		"The VAC Status Checker cache has been reset."
+	}
+	"Message_Usage"
+	{
+		"en"		"Usage"
+	}
+	"Message_Whitelist_Added"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} was added to the VAC Status Checker whitelist."
+	}
+	"Message_Whitelist_Removed"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} was removed from the VAC Status Checker whitelist."
+	}
+	"Message_Whitelist_Cleared"
+	{
+		"en"		"The VAC Status Checker whitelist was cleared."
+	}
+	"Error_Socket"
+	{
+		"#format"	"{1:d},{2:d}"
+		"en"		"Socket error {1} (errno {2})"
+	}
 	"Kicked"
 	{
-		"en"		"You were kicked due to a previous VAC violation."
+		"en"		"kicked"
 	}
 	"Banned"
 	{
-		"en"		"You have been banned due to a previous VAC violation."
+		"en"		"banned"
 	}
-	"Banned_Server"
+	"Log_Banned"
 	{
-		"en"		"banned due to a previous VAC violation."
+		"#format"	"{1:s},{2:t}"
+		"en"		"{1} was banned due to {2} on record."
+	}
+	"Player_Message"
+	{
+		"#format"	"{1:t},{2:t}"
+		"en"		"You were {1} due to {2} on your account."
+	}
+	"Admin_Message"
+	{
+		"#format"	"{1:d},{2:d},{3:t},{4:t}"
+		"en"		"VAC bans: {1}, Game bans: {2}, Community: {3}, Economy: {4}"
+	}
+	"Status_None"
+	{
+		"en"		"CLEAN"
+	}
+	"Status_Banned"
+	{
+		"en"		"BANNED"
+	}
+	"Status_Probation"
+	{
+		"en"		"PROBATION"
+	}
+	"VAC_Ban"
+	{
+		"en"		"a VAC ban"
+	}
+	"Game_Ban"
+	{
+		"en"		"a game ban"
+	}
+	"VAC_Ban_Plural"
+	{
+		"en"		"VAC bans"
+	}
+	"Game_Ban_Plural"
+	{
+		"en"		"game bans"
+	}
+	"Community_Ban"
+	{
+		"en"		"a Steam Community ban"
+	}
+	"Economy_Ban"
+	{
+		"en"		"an economy ban"
+	}
+	"Economy_Probation"
+	{
+		"en"		"economy probation"
 	}
 }

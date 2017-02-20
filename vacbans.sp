@@ -108,21 +108,32 @@ char g_dbConfig[64];
 
 public void OnPluginStart()
 {
-	CreateConVar("sm_vacbans_version", PLUGIN_VERSION, "VAC Ban Checker plugin version", FCVAR_SPONLY | FCVAR_REPLICATED | FCVAR_NOTIFY | FCVAR_DONTRECORD);
+	LoadTranslations("vacbans.phrases");
+	char desc[256];
 
-	g_hCVDB = CreateConVar("sm_vacbans_db", "storage-local", "The named database config to use for caching");
-	g_hCVCacheTime = CreateConVar("sm_vacbans_cachetime", "30", "How long in days before re-checking the same client", _, true, 0.0);
-	g_hCVAction = CreateConVar("sm_vacbans_action", "0", "Action to take on detected clients (0 = ban, 1 = kick, 2 = alert admins, 3 = log only)", _, true, 0.0, true, 3.0);
-	g_hCVDetectVACBans = CreateConVar("sm_vacbans_detect_vac_bans", "1", "Enable VAC ban detection", _, true, 0.0, true, 1.0);
-	g_hCVDetectGameBans = CreateConVar("sm_vacbans_detect_game_bans", "0", "Enable game ban detection", _, true, 0.0, true, 1.0);
-	g_hCVDetectCommunityBans = CreateConVar("sm_vacbans_detect_community_bans", "0", "Enable Steam Community ban detection", _, true, 0.0, true, 1.0);
-	g_hCVDetectEconBans = CreateConVar("sm_vacbans_detect_econ_bans", "0", "Enable economy (trade) ban/probation detection", _, true, 0.0, true, 1.0);
+	Format(desc, sizeof(desc), "%T", "ConVar_Version", LANG_SERVER);
+	CreateConVar("sm_vacbans_version", PLUGIN_VERSION, desc, FCVAR_SPONLY | FCVAR_REPLICATED | FCVAR_NOTIFY | FCVAR_DONTRECORD);
+
+	Format(desc, sizeof(desc), "%T", "ConVar_DB", LANG_SERVER);
+	g_hCVDB = CreateConVar("sm_vacbans_db", "storage-local", desc);
+	Format(desc, sizeof(desc), "%T", "ConVar_CacheTime", LANG_SERVER);
+	g_hCVCacheTime = CreateConVar("sm_vacbans_cachetime", "30", desc, _, true, 0.0);
+	Format(desc, sizeof(desc), "%T", "ConVar_Action", LANG_SERVER);
+	g_hCVAction = CreateConVar("sm_vacbans_action", "0", desc, _, true, 0.0, true, 3.0);
+	Format(desc, sizeof(desc), "%T", "ConVar_Detect_VAC", LANG_SERVER);
+	g_hCVDetectVACBans = CreateConVar("sm_vacbans_detect_vac_bans", "1", desc, _, true, 0.0, true, 1.0);
+	Format(desc, sizeof(desc), "%T", "ConVar_Detect_Game", LANG_SERVER);
+	g_hCVDetectGameBans = CreateConVar("sm_vacbans_detect_game_bans", "0", desc, _, true, 0.0, true, 1.0);
+	Format(desc, sizeof(desc), "%T", "ConVar_Detect_Community", LANG_SERVER);
+	g_hCVDetectCommunityBans = CreateConVar("sm_vacbans_detect_community_bans", "0", desc, _, true, 0.0, true, 1.0);
+	Format(desc, sizeof(desc), "%T", "ConVar_Detect_Econ", LANG_SERVER);
+	g_hCVDetectEconBans = CreateConVar("sm_vacbans_detect_econ_bans", "0", desc, _, true, 0.0, true, 1.0);
 	AutoExecConfig(true, "vacbans");
 
-	RegAdminCmd("sm_vacbans_reset", Command_Reset, ADMFLAG_RCON, "Clears the local vacbans SQLite database");
-	RegAdminCmd("sm_vacbans_whitelist", Command_Whitelist, ADMFLAG_RCON, "Controls the vacbans whitelist");
-
-	LoadTranslations("vacbans.phrases");
+	Format(desc, sizeof(desc), "%T", "Command_Reset", LANG_SERVER);
+	RegAdminCmd("sm_vacbans_reset", Command_Reset, ADMFLAG_RCON, desc);
+	Format(desc, sizeof(desc), "%T", "Command_Whitelist", LANG_SERVER);
+	RegAdminCmd("sm_vacbans_whitelist", Command_Whitelist, ADMFLAG_RCON, desc);
 }
 
 public void OnConfigsExecuted()
@@ -227,7 +238,7 @@ public int OnSocketDisconnected(Handle hSock, DataPack hPack)
 
 public int OnSocketError(Handle hSock, const int errorType, const int errorNum, DataPack hPack)
 {
-	LogError("Socket error %d (errno %d)", errorType, errorNum);
+	LogError("%T", "Error_Socket", LANG_SERVER, errorType, errorNum);
 
 	delete hPack;
 	delete hSock;
@@ -236,7 +247,7 @@ public int OnSocketError(Handle hSock, const int errorType, const int errorNum, 
 public Action Command_Reset(int client, int args)
 {
 	g_hDatabase.Query(OnQueryNoOp, "DELETE FROM `vacbans_cache` WHERE `expire` != 0;");
-	ReplyToCommand(client, "[SM] Local VAC Status Checker cache has been reset.");
+	ReplyToCommand(client, "[SM] %t", "Message_Reset");
 	return Plugin_Handled;
 }
 
@@ -261,7 +272,7 @@ public Action Command_Whitelist(int client, int args)
 				Format(query, sizeof(query), "REPLACE INTO `vacbans_cache` (`steam_id`, `expire`) VALUES ('%s', 0);", friendID);
 				g_hDatabase.Query(OnQueryNoOp, query);
 
-				ReplyToCommand(client, "[SM] %s added to the VAC Status Checker whitelist.", steamID);
+				ReplyToCommand(client, "[SM] %t", "Message_Whitelist_Added", steamID);
 
 				return Plugin_Handled;
 			}
@@ -270,7 +281,7 @@ public Action Command_Whitelist(int client, int args)
 				Format(query, sizeof(query), "DELETE FROM `vacbans_cache` WHERE `steam_id` = '%s';", friendID);
 				g_hDatabase.Query(OnQueryNoOp, query);
 
-				ReplyToCommand(client, "[SM] %s removed from the VAC Status Checker whitelist.", steamID);
+				ReplyToCommand(client, "[SM] %t", "Message_Whitelist_Removed", steamID);
 
 				return Plugin_Handled;
 			}
@@ -282,13 +293,13 @@ public Action Command_Whitelist(int client, int args)
 		{
 			g_hDatabase.Query(OnQueryNoOp, "DELETE FROM `vacbans_cache` WHERE `expire` = 0;");
 
-			ReplyToCommand(client, "[SM] VAC Status Checker whitelist cleared.");
+			ReplyToCommand(client, "[SM] %t", "Message_Whitelist_Cleared");
 
 			return Plugin_Handled;
 		}
 	}
 
-	ReplyToCommand(client, "Usage: sm_vacbans_whitelist <add|remove|clear> [SteamID]");
+	ReplyToCommand(client, "%t: sm_vacbans_whitelist <add|remove|clear> [SteamID]", "Message_Usage");
 	return Plugin_Handled;
 }
 
@@ -312,27 +323,78 @@ void HandleClient(int client, const char[] friendID, int numVACBans, int numGame
 
 		if(vacBanned || gameBanned || commBanned || econBanned)
 		{
+			char reason[32];
+			if(vacBanned && numVACBans > 1)
+			{
+				reason = "VAC_Ban_Plural";
+			}
+			else if(vacBanned)
+			{
+				reason = "VAC_Ban";
+			}
+			else if(gameBanned && numGameBans > 1)
+			{
+				reason = "Game_Ban_Plural";
+			}
+			else if(gameBanned)
+			{
+				reason = "Game_Ban";
+			}
+			else if(commBanned)
+			{
+				reason = "Community_Ban";
+			}
+			else if(econBanned && econStatus > 1)
+			{
+				reason = "Economy_Ban";
+			}
+			else if(econBanned)
+			{
+				reason = "Economy_Probation";
+			}
+
+			char commStatusText[16];
+			if(communityBanned)
+			{
+				commStatusText = "Status_Banned";
+			}
+			else
+			{
+				commStatusText = "Status_None";
+			}
+
+			char econStatusText[24];
+			switch(econStatus)
+			{
+				case 1:
+					econStatusText = "Status_Probation";
+				case 2:
+					econStatusText = "Status_Banned";
+				default:
+					econStatusText = "Status_None";
+			}
+			
 			switch(g_hCVAction.IntValue)
 			{
 				case 0:
 				{
 					char userformat[64];
 					Format(userformat, sizeof(userformat), "%L", client);
-					LogAction(0, client, "%s %T", userformat, "Banned_Server", LANG_SERVER);
+					LogAction(0, client, "%T", "Log_Banned", LANG_SERVER, userformat, reason);
 
-					ServerCommand("sm_ban #%d 0 \"[VAC Status Checker] %T\"", GetClientUserId(client), "Banned", client);
+					ServerCommand("sm_ban #%d 0 \"[VAC Status Checker] %T\"", GetClientUserId(client), "Player_Message", client, "Banned", reason);
 				}
 				case 1:
 				{
-					KickClient(client, "[VAC Status Checker] %t", "Kicked");
+					KickClient(client, "[VAC Status Checker] %t", "Player_Message", "Kicked", reason);
 				}
 				case 2:
 				{
-					for (int i = 1; i <= MaxClients; i++)
+					for(int i = 1; i <= MaxClients; i++)
 					{
-						if (IsClientInGame(i) && !IsFakeClient(i) && CheckCommandAccess(i, "sm_listvac", ADMFLAG_BAN))
+						if(IsClientInGame(i) && !IsFakeClient(i) && CheckCommandAccess(i, "sm_listvac", ADMFLAG_BAN))
 						{
-							PrintToChat(i, "[VAC Status Checker] %N has VAC bans on record.", client);
+							PrintToChat(i, "[VAC Status Checker] [%N] %t", client, "Admin_Message", numVACBans, numGameBans, commStatusText, econStatusText);
 						}
 					}
 				}
@@ -340,7 +402,7 @@ void HandleClient(int client, const char[] friendID, int numVACBans, int numGame
 
 			char path[PLATFORM_MAX_PATH];
 			BuildPath(Path_SM, path, sizeof(path), "logs/vacbans.log");
-			LogToFile(path, "Player %L is VAC Banned", client);
+			LogToFile(path, "%L %T", client, "Admin_Message", LANG_SERVER, numVACBans, numGameBans, commStatusText, econStatusText);
 		}
 
 		if(!fromCache)
