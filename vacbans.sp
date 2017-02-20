@@ -211,12 +211,11 @@ public int OnSocketDisconnected(Handle hSock, DataPack hPack)
 		hData.ReadString(buffer, sizeof(buffer));
 		StrCat(responseData, sizeof(responseData), buffer);
 	}
-	char responseParts[2][32];
-	if(ExplodeString(responseData, "\r\n\r\n", responseParts, sizeof(responseParts), sizeof(responseParts[])) > 1)
+
+	if(!ParseResponse(responseData, responseData, sizeof(responseData)))
 	{
-		responseData = responseParts[1];
+		return;
 	}
-	TrimString(responseData);
 
 	char steamID[18];
 	hPack.ReadString(steamID, sizeof(steamID));
@@ -355,6 +354,43 @@ public Action Command_List(int client, int args)
 			}
 		}
 	}
+}
+
+/**
+ * Parse the HTTP response from the server.
+ *
+ * @param response The response from the server
+ * @param buffer   The buffer to store the body of the response
+ * @param maxlen   The maximum length of the buffer
+ * @return Whether the response was successfully parsed
+ */
+bool ParseResponse(const char[] response, char[] buffer, int maxlen)
+{
+	int pos = FindCharInString(response, ' ');
+	if(pos == -1)
+	{
+		return false;
+	}
+	char status[4];
+	if(SplitString(response[pos + 1], " ", status, sizeof(status)) == -1)
+	{
+		return false;
+	}
+	if(StringToInt(status) != 200)
+	{
+		return false;
+	}
+
+	char[][] parts = new char[2][maxlen];
+	if(ExplodeString(response, "\r\n\r\n", parts, 2, maxlen) < 2)
+	{
+		return false;
+	}
+
+	TrimString(parts[1]);
+	strcopy(buffer, maxlen, parts[1]);
+
+	return true;
 }
 
 /**
