@@ -110,7 +110,7 @@ public void OnPluginStart()
 	Format(desc, sizeof(desc), "%T", "ConVar_DB", LANG_SERVER);
 	g_hCVDB = CreateConVar("sm_vacbans_db", "storage-local", desc);
 	Format(desc, sizeof(desc), "%T", "ConVar_CacheTime", LANG_SERVER);
-	g_hCVCacheTime = CreateConVar("sm_vacbans_cachetime", "30", desc, _, true, 0.0);
+	g_hCVCacheTime = CreateConVar("sm_vacbans_cachetime", "1", desc, _, true, 0.0);
 	Format(desc, sizeof(desc), "%T", "ConVar_Action", LANG_SERVER);
 	g_hCVAction = CreateConVar("sm_vacbans_action", "0", desc, _, true, 0.0, true, 3.0);
 	Format(desc, sizeof(desc), "%T", "ConVar_Detect_VAC", LANG_SERVER);
