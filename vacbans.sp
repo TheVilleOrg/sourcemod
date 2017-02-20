@@ -144,7 +144,7 @@ public void OnPluginStart()
 	Format(desc, sizeof(desc), "%T", "Command_Whitelist", LANG_SERVER);
 	RegAdminCmd("sm_vacbans_whitelist", Command_Whitelist, ADMFLAG_RCON, desc);
 	Format(desc, sizeof(desc), "%T", "Command_List", LANG_SERVER);
-	RegAdminCmd("sm_vacbans_list", Command_List, ADMFLAG_GENERIC, desc);
+	RegAdminCmd("sm_vacbans_list", Command_List, ADMFLAG_KICK, desc);
 }
 
 public void OnDBConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -529,7 +529,7 @@ void HandleClient(int client, const char[] steamID, bool fromCache)
 				{
 					for(int i = 1; i <= MaxClients; i++)
 					{
-						if(IsClientInGame(i) && !IsFakeClient(i) && CheckCommandAccess(i, "sm_listvac", ADMFLAG_BAN))
+						if(IsClientInGame(i) && !IsFakeClient(i) && CheckCommandAccess(i, "sm_vacbans_list", ADMFLAG_KICK))
 						{
 							PrintToChat(i, "[VAC Status Checker] [%N] %t", client, "Admin_Message", numVACBans, numGameBans, commStatusText, econStatusText);
 						}
