@@ -12,12 +12,21 @@
  * (http://forums.alliedmods.net/showthread.php?t=67640)
  * 
  * Credits:
- *   voogru - finding the relationship between SteamIDs and friendIDs
- *   StrontiumDog - the fixed function that converts SteamIDs
- *   berni - the original function that converts SteamIDs
+ *   voogru - finding the algorithm for converting SteamIDs
+ *   berni & StrontiumDog - the original that converts SteamIDs
  *   r3dw3r3w0lf - admin alert code
  * 
  * Changelog
+ * Feb 21, 2017 - v.2.0.0:
+ *   [*] Switched to the Steam Web API
+ *   [+] Added detection of game, Steam Community, and trade bans
+ *   [+] Added ConVars to control the types of bans that are detected
+ *   [+] Added option to ignore VAC bans after a specified number of days
+ *   [+] Added admin command to list the bans of connected clients
+ *   [*] Changed the default action to kick
+ *   [*] Changed the default cache time to 1 day
+ *   [*] Added fallback to cached data when there is an error
+ *   [*] Fixed new database connections being created on every map change
  * Mar 08, 2015 - v.1.4.3:
  *   [*] Fixed missing client name in admin messages
  * Feb 22, 2015 - v.1.4.2:
