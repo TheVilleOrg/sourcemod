@@ -13,7 +13,7 @@
  * 
  * Credits:
  *   voogru - finding the algorithm for converting SteamIDs
- *   berni & StrontiumDog - the original that converts SteamIDs
+ *   berni & StrontiumDog - the function that converts SteamIDs
  *   r3dw3r3w0lf - admin alert code
  * 
  * Changelog
