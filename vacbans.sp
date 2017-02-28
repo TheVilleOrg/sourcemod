@@ -15,6 +15,7 @@
  *   voogru - finding the algorithm for converting SteamIDs
  *   berni & StrontiumDog - the function that converts SteamIDs
  *   r3dw3r3w0lf - admin alert code
+ *   Cripix - French translation
  * 
  * Changelog
  * Feb 21, 2017 - v.2.0.0:
