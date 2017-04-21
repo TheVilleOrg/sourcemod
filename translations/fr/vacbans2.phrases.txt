@@ -11,7 +11,7 @@
 	"ConVar_CacheTime"
 	{
 		"fr"		"Combien de jour avant que le joueur soit re-verifier"
-    }
+	}
 	"ConVar_Action"
 	{
 		"fr"		"Action à prendre sur les clients détectés (0 = ban, 1 = kick, 2 = alert admins, 3 = log only)"
