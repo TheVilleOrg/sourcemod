@@ -245,7 +245,7 @@ public int OnSocketDisconnected(Handle hSock, DataPack hPack)
 
 	char responseData[1024];
 	char buffer[1024];
-	while(hData.IsReadable()) {
+	while(hData.IsReadable(1)) {
 		hData.ReadString(buffer, sizeof(buffer));
 		StrCat(responseData, sizeof(responseData), buffer);
 	}
