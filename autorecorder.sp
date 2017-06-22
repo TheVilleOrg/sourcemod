@@ -178,7 +178,7 @@ public CheckStatus()
 		FormatTime(sCurrentTime, sizeof(sCurrentTime), "%H", GetTime());
 		new iCurrentTime = StringToInt(sCurrentTime);
 		
-		if(GetPlayerCount() >= iMinClients+1 && (iTimeStart < 0 || (iCurrentTime >= iTimeStart && (bReverseTimes || iCurrentTime < iTimeStop))))
+		if(GetPlayerCount() >= iMinClients && (iTimeStart < 0 || (iCurrentTime >= iTimeStart && (bReverseTimes || iCurrentTime < iTimeStop))))
 		{
 			StartRecord();
 		}
