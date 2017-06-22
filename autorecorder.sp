@@ -24,24 +24,14 @@
 * 
 */
 
-#pragma semicolon 1
 #include <sourcemod>
+
+#pragma semicolon 1
+#pragma newdecls required
 
 #define PLUGIN_VERSION "1.2.0"
 
-new Handle:g_hTvEnabled = INVALID_HANDLE;
-new Handle:g_hAutoRecord = INVALID_HANDLE;
-new Handle:g_hMinPlayersStart = INVALID_HANDLE;
-new Handle:g_hIgnoreBots = INVALID_HANDLE;
-new Handle:g_hTimeStart = INVALID_HANDLE;
-new Handle:g_hTimeStop = INVALID_HANDLE;
-new Handle:g_hFinishMap = INVALID_HANDLE;
-new Handle:g_hDemoPath = INVALID_HANDLE;
-
-new bool:g_bIsRecording = false;
-new bool:g_bIsManual = false;
-
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "Auto Recorder",
 	author = "Stevo.TVR",
@@ -50,7 +40,19 @@ public Plugin:myinfo =
 	url = "http://www.theville.org"
 }
 
-public OnPluginStart()
+ConVar g_hTvEnabled = null;
+ConVar g_hAutoRecord = null;
+ConVar g_hMinPlayersStart = null;
+ConVar g_hIgnoreBots = null;
+ConVar g_hTimeStart = null;
+ConVar g_hTimeStop = null;
+ConVar g_hFinishMap = null;
+ConVar g_hDemoPath = null;
+
+bool g_bIsRecording = false;
+bool g_bIsManual = false;
+
+public void OnPluginStart()
 {
 	CreateConVar("sm_autorecord_version", PLUGIN_VERSION, "Auto Recorder plugin version", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
 
@@ -69,18 +71,18 @@ public OnPluginStart()
 
 	g_hTvEnabled = FindConVar("tv_enable");
 
-	decl String:sPath[PLATFORM_MAX_PATH];
-	GetConVarString(g_hDemoPath, sPath, sizeof(sPath));
+	char sPath[PLATFORM_MAX_PATH];
+	g_hDemoPath.GetString(sPath, sizeof(sPath));
 	if(!DirExists(sPath))
 	{
 		InitDirectory(sPath);
 	}
 
-	HookConVarChange(g_hMinPlayersStart, OnConVarChanged);
-	HookConVarChange(g_hIgnoreBots, OnConVarChanged);
-	HookConVarChange(g_hTimeStart, OnConVarChanged);
-	HookConVarChange(g_hTimeStop, OnConVarChanged);
-	HookConVarChange(g_hDemoPath, OnConVarChanged);
+	g_hMinPlayersStart.AddChangeHook(OnConVarChanged);
+	g_hIgnoreBots.AddChangeHook(OnConVarChanged);
+	g_hTimeStart.AddChangeHook(OnConVarChanged);
+	g_hTimeStop.AddChangeHook(OnConVarChanged);
+	g_hDemoPath.AddChangeHook(OnConVarChanged);
 
 	CreateTimer(300.0, Timer_CheckStatus, _, TIMER_REPEAT);
 
@@ -88,7 +90,7 @@ public OnPluginStart()
 	CheckStatus();
 }
 
-public OnConVarChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+public void OnConVarChanged(ConVar convar, const char[] oldValue, const char [] newValue)
 {
 	if(convar == g_hDemoPath)
 	{
@@ -103,7 +105,7 @@ public OnConVarChanged(Handle:convar, const String:oldValue[], const String:newV
 	}
 }
 
-public OnMapEnd()
+public void OnMapEnd()
 {
 	if(g_bIsRecording)
 	{
@@ -112,22 +114,22 @@ public OnMapEnd()
 	}
 }
 
-public OnClientPutInServer(client)
+public void OnClientPutInServer(int client)
 {
 	CheckStatus();
 }
 
-public OnClientDisconnect_Post(client)
+public void OnClientDisconnect_Post(int client)
 {
 	CheckStatus();
 }
 
-public Action:Timer_CheckStatus(Handle:Timer)
+public Action Timer_CheckStatus(Handle timer)
 {
 	CheckStatus();
 }
 
-public Action:Command_Record(client, args)
+public Action Command_Record(int client, int args)
 {
 	if(g_bIsRecording)
 	{
@@ -143,7 +145,7 @@ public Action:Command_Record(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Command_StopRecord(client, args)
+public Action Command_StopRecord(int client, int args)
 {
 	if(!g_bIsRecording)
 	{
@@ -164,37 +166,37 @@ public Action:Command_StopRecord(client, args)
 	return Plugin_Handled;
 }
 
-public CheckStatus()
+void CheckStatus()
 {
-	if(GetConVarBool(g_hAutoRecord) && !g_bIsManual)
+	if(g_hAutoRecord.BoolValue && !g_bIsManual)
 	{
-		new iMinClients = GetConVarInt(g_hMinPlayersStart);
+		int iMinClients = g_hMinPlayersStart.IntValue;
 
-		new iTimeStart = GetConVarInt(g_hTimeStart);
-		new iTimeStop = GetConVarInt(g_hTimeStop);
-		new bool:bReverseTimes = (iTimeStart > iTimeStop);
+		int iTimeStart = g_hTimeStart.IntValue;
+		int iTimeStop = g_hTimeStop.IntValue;
+		bool bReverseTimes = (iTimeStart > iTimeStop);
 
-		decl String:sCurrentTime[4];
+		char sCurrentTime[4];
 		FormatTime(sCurrentTime, sizeof(sCurrentTime), "%H", GetTime());
-		new iCurrentTime = StringToInt(sCurrentTime);
+		int iCurrentTime = StringToInt(sCurrentTime);
 
 		if(GetPlayerCount() >= iMinClients && (iTimeStart < 0 || (iCurrentTime >= iTimeStart && (bReverseTimes || iCurrentTime < iTimeStop))))
 		{
 			StartRecord();
 		}
-		else if(g_bIsRecording && !GetConVarBool(g_hFinishMap) && (iTimeStop < 0 || iCurrentTime >= iTimeStop))
+		else if(g_bIsRecording && !g_hFinishMap.BoolValue && (iTimeStop < 0 || iCurrentTime >= iTimeStop))
 		{
 			StopRecord();
 		}
 	}
 }
 
-public GetPlayerCount()
+int GetPlayerCount()
 {
-	bool bIgnoreBots = GetConVarBool(g_hIgnoreBots);
+	bool bIgnoreBots = g_hIgnoreBots.BoolValue;
 
-	new iNumPlayers = 0;
-	for(new i = 1; i <= MaxClients; i++)
+	int iNumPlayers = 0;
+	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(IsClientConnected(i) && (!bIgnoreBots || !IsFakeClient(i)))
 		{
@@ -210,13 +212,15 @@ public GetPlayerCount()
 	return iNumPlayers;
 }
 
-public StartRecord()
+void StartRecord()
 {
-	if(GetConVarBool(g_hTvEnabled) && !g_bIsRecording)
+	if(g_hTvEnabled.BoolValue && !g_bIsRecording)
 	{
-		decl String:sPath[PLATFORM_MAX_PATH], String:sTime[16], String:sMap[32];
+		char sPath[PLATFORM_MAX_PATH];
+		char sTime[16];
+		char sMap[32];
 
-		GetConVarString(g_hDemoPath, sPath, sizeof(sPath));
+		g_hDemoPath.GetString(sPath, sizeof(sPath));
 		FormatTime(sTime, sizeof(sTime), "%Y%m%d-%H%M%S", GetTime());
 		GetCurrentMap(sMap, sizeof(sMap));
 
@@ -230,22 +234,22 @@ public StartRecord()
 	}
 }
 
-public StopRecord()
+void StopRecord()
 {
-	if(GetConVarBool(g_hTvEnabled))
+	if(g_hTvEnabled.BoolValue)
 	{
 		ServerCommand("tv_stoprecord");
 		g_bIsRecording = false;
 	}
 }
 
-public InitDirectory(const String:sDir[])
+void InitDirectory(const char[] sDir)
 {
-	decl String:sPieces[32][PLATFORM_MAX_PATH];
-	new String:sPath[PLATFORM_MAX_PATH];
-	new iNumPieces = ExplodeString(sDir, "/", sPieces, sizeof(sPieces), sizeof(sPieces[]));
+	char sPieces[32][PLATFORM_MAX_PATH];
+	char sPath[PLATFORM_MAX_PATH];
+	int iNumPieces = ExplodeString(sDir, "/", sPieces, sizeof(sPieces), sizeof(sPieces[]));
 
-	for(new i = 0; i < iNumPieces; i++)
+	for(int i = 0; i < iNumPieces; i++)
 	{
 		Format(sPath, sizeof(sPath), "%s/%s", sPath, sPieces[i]);
 		if(!DirExists(sPath))
