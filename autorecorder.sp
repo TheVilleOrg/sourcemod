@@ -21,6 +21,10 @@
 *   [*] The SourceTV client is now always ignored in the player count
 *   [+] Added sm_autorecord_ignorebots to control whether to ignore bots
 *   [*] Now checks the status of the server immediately when a setting is changed
+* Jun 21, 2017 - v.1.3.0:
+*   [*] Fixed minimum player count setting being off by one
+*   [*] Fixed player counting code getting out of range
+*   [*] Updated source code to the new syntax
 * 
 */
 
