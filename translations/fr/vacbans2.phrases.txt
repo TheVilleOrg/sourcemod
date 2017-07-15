@@ -2,7 +2,7 @@
 {
 	"ConVar_Version"
 	{
-		"fr"		"Version du plugin de VAC Ban Checker"
+		"fr"		"Version du plugin de VAC Status Checker"
 	}
 	"ConVar_DB"
 	{
