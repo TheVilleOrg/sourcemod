@@ -85,6 +85,12 @@
 #define PLUGIN_VERSION "2.0.0"
 #define DATABASE_VERSION 1
 
+#define ACTION_LOG 1
+#define ACTION_KICK 2
+#define ACTION_BAN 4
+#define ACTION_NOTIFY_ADMINS 8
+#define ACTION_NOTIFY_ALL 16
+
 public Plugin myinfo = 
 {
 	name = "VAC Status Checker",
@@ -99,6 +105,7 @@ Database g_hDatabase = null;
 ConVar g_hCVDB = null;
 ConVar g_hCVCacheTime = null;
 ConVar g_hCVAction = null;
+ConVar g_hCVActions = null;
 ConVar g_hCVDetectVACBans = null;
 ConVar g_hCVVACExpire = null;
 ConVar g_hCVDetectGameBans = null;
@@ -118,7 +125,7 @@ int g_clientStatus[MAXPLAYERS + 1][5];
 public void OnPluginStart()
 {
 	LoadTranslations("vacbans2.phrases");
-	char desc[128];
+	char desc[256];
 
 	Format(desc, sizeof(desc), "%T", "ConVar_Version", LANG_SERVER);
 	CreateConVar("sm_vacbans_version", PLUGIN_VERSION, desc, FCVAR_SPONLY | FCVAR_REPLICATED | FCVAR_NOTIFY | FCVAR_DONTRECORD);
@@ -128,7 +135,9 @@ public void OnPluginStart()
 	Format(desc, sizeof(desc), "%T", "ConVar_CacheTime", LANG_SERVER);
 	g_hCVCacheTime = CreateConVar("sm_vacbans_cachetime", "1", desc, _, true, 0.0);
 	Format(desc, sizeof(desc), "%T", "ConVar_Action", LANG_SERVER);
-	g_hCVAction = CreateConVar("sm_vacbans_action", "1", desc, _, true, 0.0, true, 3.0);
+	g_hCVAction = CreateConVar("sm_vacbans_action", "-1", desc, FCVAR_DONTRECORD, true, -1.0, true, 3.0);
+	Format(desc, sizeof(desc), "%T", "ConVar_Actions", LANG_SERVER);
+	g_hCVActions = CreateConVar("sm_vacbans_actions", "3", desc, _, true, 0.0, true, 31.0);
 	Format(desc, sizeof(desc), "%T", "ConVar_Detect_VAC", LANG_SERVER);
 	g_hCVDetectVACBans = CreateConVar("sm_vacbans_detect_vac_bans", "1", desc, _, true, 0.0, true, 1.0);
 	Format(desc, sizeof(desc), "%T", "ConVar_VAC_Expire", LANG_SERVER);
@@ -171,6 +180,29 @@ public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] n
 		if(IsClientAuthorized(i) && GetClientAuthId(i, AuthId_SteamID64, steamID, sizeof(steamID)))
 		{
 			HandleClient(i, steamID, true);
+		}
+	}
+
+	if(convar == g_hCVAction)
+	{
+		switch(g_hCVAction.IntValue)
+		{
+			case 0:
+			{
+				g_hCVActions.SetInt(ACTION_LOG + ACTION_BAN);
+			}
+			case 1:
+			{
+				g_hCVActions.SetInt(ACTION_LOG + ACTION_KICK);
+			}
+			case 2:
+			{
+				g_hCVActions.SetInt(ACTION_LOG + ACTION_NOTIFY_ADMINS);
+			}
+			case 3:
+			{
+				g_hCVActions.SetInt(ACTION_LOG);
+			}
 		}
 	}
 }
@@ -470,6 +502,8 @@ void HandleClient(int client, const char[] steamID, bool fromCache)
 
 		if(vacBanned || gameBanned || commBanned || econBanned || econProbation)
 		{
+			int actions = g_hCVActions.IntValue;
+
 			char reason[32];
 			if(vacBanned && numVACBans > 1)
 			{
@@ -521,35 +555,43 @@ void HandleClient(int client, const char[] steamID, bool fromCache)
 					econStatusText = "Status_None";
 			}
 
-			switch(g_hCVAction.IntValue)
+			if(actions & ACTION_LOG)
 			{
-				case 0:
-				{
-					char userformat[64];
-					Format(userformat, sizeof(userformat), "%L", client);
-					LogAction(0, client, "%T", "Log_Banned", LANG_SERVER, userformat, reason);
-
-					ServerCommand("sm_ban #%d 0 \"[VAC Status Checker] %T\"", GetClientUserId(client), "Player_Message", client, "Banned", reason);
-				}
-				case 1:
-				{
-					KickClient(client, "[VAC Status Checker] %t", "Player_Message", "Kicked", reason);
-				}
-				case 2:
-				{
-					for(int i = 1; i <= MaxClients; i++)
-					{
-						if(IsClientInGame(i) && !IsFakeClient(i) && CheckCommandAccess(i, "sm_vacbans_list", ADMFLAG_KICK))
-						{
-							PrintToChat(i, "[VAC Status Checker] [%N] %t", client, "Admin_Message", numVACBans, numGameBans, commStatusText, econStatusText);
-						}
-					}
-				}
+				char path[PLATFORM_MAX_PATH];
+				BuildPath(Path_SM, path, sizeof(path), "logs/vacbans.log");
+				LogToFile(path, "%L %T", client, "Admin_Message", LANG_SERVER, numVACBans, numGameBans, commStatusText, econStatusText);
 			}
 
-			char path[PLATFORM_MAX_PATH];
-			BuildPath(Path_SM, path, sizeof(path), "logs/vacbans.log");
-			LogToFile(path, "%L %T", client, "Admin_Message", LANG_SERVER, numVACBans, numGameBans, commStatusText, econStatusText);
+			if(actions & ACTION_BAN)
+			{
+				char userformat[64];
+				Format(userformat, sizeof(userformat), "%L", client);
+				LogAction(0, client, "%T", "Log_Banned", LANG_SERVER, userformat, reason);
+
+				ServerCommand("sm_ban #%d 0 \"[VAC Status Checker] %T\"", GetClientUserId(client), "Player_Message", client, "Banned", reason);
+			}
+			else if(actions & ACTION_KICK)
+			{
+				KickClient(client, "[VAC Status Checker] %t", "Player_Message", "Kicked", reason);
+			}
+
+			if(actions & ACTION_NOTIFY_ALL || actions & ACTION_NOTIFY_ADMINS)
+			{
+				for(int i = 1; i <= MaxClients; i++)
+				{
+					if(!IsClientInGame(i) || IsFakeClient(i))
+					{
+						continue;
+					}
+
+					if(!(actions & ACTION_NOTIFY_ALL) && !CheckCommandAccess(i, "sm_vacbans_list", ADMFLAG_KICK))
+					{
+						continue;
+					}
+
+					PrintToChat(i, "[VAC Status Checker] [%N] %t", client, "Admin_Message", numVACBans, numGameBans, commStatusText, econStatusText);
+				}
+			}
 		}
 
 		if(!fromCache)
