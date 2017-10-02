@@ -28,6 +28,10 @@
 	{
 		"en"		"Ignore VAC bans older than this many days (0 = disabled)"
 	}
+	"ConVar_VAC_Epoch"
+	{
+		"en"		"Ignore VAC bans issued before this date (format: YYYY-MM-DD)"
+	}
 	"ConVar_Detect_Game"
 	{
 		"en"		"Enable game ban detection"

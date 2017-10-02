@@ -1,5 +1,5 @@
 /**
- * 
+ *
  * VAC Status Checker
  * http://forums.alliedmods.net/showthread.php?t=80942
  *
@@ -7,16 +7,16 @@
  * Checks for VAC, game, Steam Community, and trade bans on the accounts of connecting clients and
  * takes the desired action. Useful for admins who want to block access to people for bad behavior
  * outside the server.
- * 
+ *
  * Requires Socket Extension by sfPlayer
  * (http://forums.alliedmods.net/showthread.php?t=67640)
- * 
+ *
  * Credits:
  *   voogru - finding the algorithm for converting SteamIDs
  *   berni & StrontiumDog - the function that converts SteamIDs
  *   r3dw3r3w0lf - admin alert code
  *   Cripix - French translation
- * 
+ *
  * Changelog
  * Feb 21, 2017 - v.2.0.0:
  *   [*] Switched to the Steam Web API
@@ -73,7 +73,7 @@
  *   [*] Changed file naming to avoid conflicts
  * Nov 24, 2008 - v.1.0.0:
  *   [*] Initial Release
- * 
+ *
  */
 
 #include <sourcemod>
@@ -91,7 +91,7 @@
 #define ACTION_NOTIFY_ADMINS 8
 #define ACTION_NOTIFY_ALL 16
 
-public Plugin myinfo = 
+public Plugin myinfo =
 {
 	name = "VAC Status Checker",
 	author = "Stevo.TVR",
@@ -108,6 +108,7 @@ ConVar g_hCVAction = null;
 ConVar g_hCVActions = null;
 ConVar g_hCVDetectVACBans = null;
 ConVar g_hCVVACExpire = null;
+ConVar g_hCVVACEpoch = null;
 ConVar g_hCVDetectGameBans = null;
 ConVar g_hCVDetectCommunityBans = null;
 ConVar g_hCVDetectEconBans = null;
@@ -142,6 +143,8 @@ public void OnPluginStart()
 	g_hCVDetectVACBans = CreateConVar("sm_vacbans_detect_vac_bans", "1", desc, _, true, 0.0, true, 1.0);
 	Format(desc, sizeof(desc), "%T", "ConVar_VAC_Expire", LANG_SERVER);
 	g_hCVVACExpire = CreateConVar("sm_vacbans_vac_expire", "0", desc, _, true, 0.0);
+	Format(desc, sizeof(desc), "%T", "ConVar_VAC_Epoch", LANG_SERVER);
+	g_hCVVACEpoch = CreateConVar("sm_vacbans_vac_epoch", "", desc);
 	Format(desc, sizeof(desc), "%T", "ConVar_Detect_Game", LANG_SERVER);
 	g_hCVDetectGameBans = CreateConVar("sm_vacbans_detect_game_bans", "0", desc, _, true, 0.0, true, 1.0);
 	Format(desc, sizeof(desc), "%T", "ConVar_Detect_Community", LANG_SERVER);
@@ -498,6 +501,24 @@ void HandleClient(int client, const char[] steamID, bool fromCache)
 		if(vacBanned && g_hCVVACExpire.BoolValue)
 		{
 			vacBanned = daysSinceLastVAC < g_hCVVACExpire.IntValue;
+		}
+
+		if(vacBanned && g_hCVVACEpoch.BoolValue)
+		{
+			char dateString[11];
+			g_hCVVACEpoch.GetString(dateString, sizeof(dateString));
+			char toks[3][5];
+			if(ExplodeString(dateString, "-", toks, sizeof(toks), sizeof(toks[])) == 3 && strlen(toks[0]) == 4 && strlen(toks[1]) == 2 && strlen(toks[2]) == 2)
+			{
+				ImplodeStrings(toks, sizeof(toks), "", dateString, sizeof(dateString));
+				int epoch = StringToInt(dateString);
+
+				char banTimeString[9];
+				FormatTime(banTimeString, sizeof(banTimeString), "%Y%m%d", GetTime() - (daysSinceLastVAC * 86400));
+				int banTime = StringToInt(banTimeString);
+
+				vacBanned = banTime > epoch;
+			}
 		}
 
 		if(vacBanned || gameBanned || commBanned || econBanned || econProbation)
