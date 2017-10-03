@@ -125,6 +125,11 @@ char g_dbConfig[64];
 char g_apiKey[64];
 
 /**
+ * The date before which VAC bans are ignored (YYYYMMDD)
+ */
+int g_VACEpoch;
+
+/**
  * The status cache for connected clients
  */
 int g_clientStatus[MAXPLAYERS + 1][5];
@@ -165,6 +170,7 @@ public void OnPluginStart()
 	g_hCVAction.AddChangeHook(OnConVarChanged);
 	g_hCVDetectVACBans.AddChangeHook(OnConVarChanged);
 	g_hCVVACExpire.AddChangeHook(OnConVarChanged);
+	g_hCVVACEpoch.AddChangeHook(OnConVarChanged);
 	g_hCVDetectGameBans.AddChangeHook(OnConVarChanged);
 	g_hCVDetectCommunityBans.AddChangeHook(OnConVarChanged);
 	g_hCVDetectEconBans.AddChangeHook(OnConVarChanged);
@@ -185,6 +191,23 @@ public void OnDBConVarChanged(ConVar convar, const char[] oldValue, const char[]
 
 public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
+	if(convar == g_hCVVACEpoch)
+	{
+		g_VACEpoch = 0;
+
+		if(g_hCVVACEpoch.BoolValue)
+		{
+			char dateString[11];
+			g_hCVVACEpoch.GetString(dateString, sizeof(dateString));
+			char toks[3][5];
+			if(ExplodeString(dateString, "-", toks, sizeof(toks), sizeof(toks[])) == 3 && strlen(toks[0]) == 4 && strlen(toks[1]) == 2 && strlen(toks[2]) == 2)
+			{
+				ImplodeStrings(toks, sizeof(toks), "", dateString, sizeof(dateString));
+				g_VACEpoch = StringToInt(dateString);
+			}
+		}
+	}
+
 	char steamID[18];
 	for(int i = 1; i <= MaxClients; i++)
 	{
@@ -553,22 +576,13 @@ void HandleClient(int client, const char[] steamID, bool fromCache)
 			vacBanned = daysSinceLastVAC < g_hCVVACExpire.IntValue;
 		}
 
-		if(vacBanned && g_hCVVACEpoch.BoolValue)
+		if(vacBanned && g_VACEpoch > 0)
 		{
-			char dateString[11];
-			g_hCVVACEpoch.GetString(dateString, sizeof(dateString));
-			char toks[3][5];
-			if(ExplodeString(dateString, "-", toks, sizeof(toks), sizeof(toks[])) == 3 && strlen(toks[0]) == 4 && strlen(toks[1]) == 2 && strlen(toks[2]) == 2)
-			{
-				ImplodeStrings(toks, sizeof(toks), "", dateString, sizeof(dateString));
-				int epoch = StringToInt(dateString);
+			char banTimeString[9];
+			FormatTime(banTimeString, sizeof(banTimeString), "%Y%m%d", GetTime() - (daysSinceLastVAC * 86400));
+			int banTime = StringToInt(banTimeString);
 
-				char banTimeString[9];
-				FormatTime(banTimeString, sizeof(banTimeString), "%Y%m%d", GetTime() - (daysSinceLastVAC * 86400));
-				int banTime = StringToInt(banTimeString);
-
-				vacBanned = banTime > epoch;
-			}
+			vacBanned = banTime > g_VACEpoch;
 		}
 
 		if(vacBanned || gameBanned || commBanned || econBanned || econProbation)
