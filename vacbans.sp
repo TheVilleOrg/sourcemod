@@ -168,6 +168,7 @@ public void OnPluginStart()
 
 	g_hCVDB.AddChangeHook(OnDBConVarChanged);
 	g_hCVAction.AddChangeHook(OnConVarChanged);
+	g_hCVActions.AddChangeHook(OnConVarChanged);
 	g_hCVDetectVACBans.AddChangeHook(OnConVarChanged);
 	g_hCVVACExpire.AddChangeHook(OnConVarChanged);
 	g_hCVVACEpoch.AddChangeHook(OnConVarChanged);
@@ -208,15 +209,6 @@ public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] n
 		}
 	}
 
-	char steamID[18];
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(IsClientAuthorized(i) && GetClientAuthId(i, AuthId_SteamID64, steamID, sizeof(steamID)))
-		{
-			HandleClient(i, steamID, true);
-		}
-	}
-
 	if(convar == g_hCVAction)
 	{
 		switch(g_hCVAction.IntValue)
@@ -224,19 +216,32 @@ public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] n
 			case 0:
 			{
 				g_hCVActions.SetInt(ACTION_LOG + ACTION_BAN);
+				return;
 			}
 			case 1:
 			{
 				g_hCVActions.SetInt(ACTION_LOG + ACTION_KICK);
+				return;
 			}
 			case 2:
 			{
 				g_hCVActions.SetInt(ACTION_LOG + ACTION_NOTIFY_ADMINS);
+				return;
 			}
 			case 3:
 			{
 				g_hCVActions.SetInt(ACTION_LOG);
+				return;
 			}
+		}
+	}
+
+	char steamID[18];
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		if(IsClientAuthorized(i) && GetClientAuthId(i, AuthId_SteamID64, steamID, sizeof(steamID)))
+		{
+			HandleClient(i, steamID, true);
 		}
 	}
 }
