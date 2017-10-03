@@ -10,7 +10,7 @@
 	}
 	"ConVar_APIKey"
 	{
-		"en"		"Your Steam Web API key"
+		"en"		"The Steam Web API key used by VAC Status Checker"
 	}
 	"ConVar_CacheTime"
 	{
