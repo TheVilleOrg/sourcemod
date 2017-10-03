@@ -299,62 +299,7 @@ public int OnSocketDisconnected(Handle hSock, DataPack hPack)
 		StrCat(responseData, sizeof(responseData), buffer);
 	}
 
-	if(!ParseResponse(responseData, responseData, sizeof(responseData)))
-	{
-		HandleClient(client, steamID, true);
-		return;
-	}
-
-	g_clientStatus[client] = {0, 0, 0, 0, 0};
-
-	ReplaceString(responseData, sizeof(responseData), " ", "");
-	ReplaceString(responseData, sizeof(responseData), "\t", "");
-	ReplaceString(responseData, sizeof(responseData), "\n", "");
-	ReplaceString(responseData, sizeof(responseData), "\r", "");
-	ReplaceString(responseData, sizeof(responseData), "\"", "");
-	ReplaceString(responseData, sizeof(responseData), "{players:[{", "");
-	ReplaceString(responseData, sizeof(responseData), "}]}", "");
-
-	char parts[16][64];
-	int count = ExplodeString(responseData, ",", parts, sizeof(parts), sizeof(parts[]));
-	char kv[2][64];
-	for(int i = 0; i < count; i++)
-	{
-		if(ExplodeString(parts[i], ":", kv, sizeof(kv), sizeof(kv[])) < 2)
-		{
-			continue;
-		}
-
-		if(StrEqual(kv[0], "NumberOfVACBans"))
-		{
-			g_clientStatus[client][0] = StringToInt(kv[1]);
-		}
-		else if(StrEqual(kv[0], "DaysSinceLastBan"))
-		{
-			g_clientStatus[client][1] = StringToInt(kv[1]);
-		}
-		else if(StrEqual(kv[0], "NumberOfGameBans"))
-		{
-			g_clientStatus[client][2] = StringToInt(kv[1]);
-		}
-		else if(StrEqual(kv[0], "CommunityBanned"))
-		{
-			g_clientStatus[client][3] = StrEqual(kv[1], "true", false) ? 1 : 0;
-		}
-		else if(StrEqual(kv[0], "EconomyBan"))
-		{
-			if(StrEqual(kv[1], "probation", false))
-			{
-				g_clientStatus[client][4] = 1;
-			}
-			else if(StrEqual(kv[1], "banned", false))
-			{
-				g_clientStatus[client][4] = 2;
-			}
-		}
-	}
-
-	HandleClient(client, steamID, false);
+	HandleClient(client, steamID, !ParseResponse(client, responseData));
 
 	delete hData;
 	delete hPack;
@@ -479,12 +424,11 @@ public Action Command_List(int client, int args)
 /**
  * Parse the HTTP response from the server.
  *
+ * @param client   The client index
  * @param response The response from the server
- * @param buffer   The buffer to store the body of the response
- * @param maxlen   The maximum length of the buffer
  * @return Whether the response was successfully parsed
  */
-bool ParseResponse(const char[] response, char[] buffer, int maxlen)
+bool ParseResponse(int client, const char[] response)
 {
 	int pos = FindCharInString(response, ' ');
 	if(pos == -1)
@@ -501,16 +445,77 @@ bool ParseResponse(const char[] response, char[] buffer, int maxlen)
 		return false;
 	}
 
-	char[][] parts = new char[2][maxlen];
-	if(ExplodeString(response, "\r\n\r\n", parts, 2, maxlen) < 2)
+	char parts[2][1024];
+	if(ExplodeString(response, "\r\n\r\n", parts, sizeof(parts), sizeof(parts[])) < 2)
 	{
 		return false;
 	}
 
 	TrimString(parts[1]);
-	strcopy(buffer, maxlen, parts[1]);
+	UpdateClientStatus(client, parts[1]);
 
 	return true;
+}
+
+/**
+ * Update the client data based on the response data.
+ *
+ * @param client   The client index
+ * @param response The response from the server
+ */
+void UpdateClientStatus(int client, const char[] response)
+{
+	g_clientStatus[client] = {0, 0, 0, 0, 0};
+
+	char responseData[1024];
+	strcopy(responseData, sizeof(responseData), response);
+
+	ReplaceString(responseData, sizeof(responseData), " ", "");
+	ReplaceString(responseData, sizeof(responseData), "\t", "");
+	ReplaceString(responseData, sizeof(responseData), "\n", "");
+	ReplaceString(responseData, sizeof(responseData), "\r", "");
+	ReplaceString(responseData, sizeof(responseData), "\"", "");
+	ReplaceString(responseData, sizeof(responseData), "{players:[{", "");
+	ReplaceString(responseData, sizeof(responseData), "}]}", "");
+
+	char parts[16][64];
+	int count = ExplodeString(responseData, ",", parts, sizeof(parts), sizeof(parts[]));
+	char kv[2][64];
+	for(int i = 0; i < count; i++)
+	{
+		if(ExplodeString(parts[i], ":", kv, sizeof(kv), sizeof(kv[])) < 2)
+		{
+			continue;
+		}
+
+		if(StrEqual(kv[0], "NumberOfVACBans"))
+		{
+			g_clientStatus[client][0] = StringToInt(kv[1]);
+		}
+		else if(StrEqual(kv[0], "DaysSinceLastBan"))
+		{
+			g_clientStatus[client][1] = StringToInt(kv[1]);
+		}
+		else if(StrEqual(kv[0], "NumberOfGameBans"))
+		{
+			g_clientStatus[client][2] = StringToInt(kv[1]);
+		}
+		else if(StrEqual(kv[0], "CommunityBanned"))
+		{
+			g_clientStatus[client][3] = StrEqual(kv[1], "true", false) ? 1 : 0;
+		}
+		else if(StrEqual(kv[0], "EconomyBan"))
+		{
+			if(StrEqual(kv[1], "probation", false))
+			{
+				g_clientStatus[client][4] = 1;
+			}
+			else if(StrEqual(kv[1], "banned", false))
+			{
+				g_clientStatus[client][4] = 2;
+			}
+		}
+	}
 }
 
 /**
