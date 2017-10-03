@@ -8,16 +8,21 @@
  * takes the desired action. Useful for admins who want to block access to people for bad behavior
  * outside the server.
  *
- * Requires Socket Extension by sfPlayer
- * (http://forums.alliedmods.net/showthread.php?t=67640)
+ * Requirements:
+ *   - Socket Extension by sfPlayer (http://forums.alliedmods.net/showthread.php?t=67640)
+ *   - Steam Web API key (https://steamcommunity.com/dev/apikey)
  *
  * Credits:
- *   voogru - finding the algorithm for converting SteamIDs
- *   berni & StrontiumDog - the function that converts SteamIDs
- *   r3dw3r3w0lf - admin alert code
- *   Cripix - French translation
+ *   - voogru: finding the algorithm for converting SteamIDs
+ *   - berni & StrontiumDog: the function that converts SteamIDs
+ *   - Cripix: French translation
+ *   - Dreizehnt: Russian translation
  *
- * Changelog
+ * Changelog:
+ * Oct 03, 2017 - v.2.1.0:
+ *   [*] Changed lookups to directly access the Steam Web API (requires key)
+ *   [+] Added sm_vacbans_vac_ignore_before to ignore VAC bans before a specific date
+ *   [+] Replaced sm_vacbans_action with sm_vacbans_actions for more options
  * Feb 21, 2017 - v.2.0.0:
  *   [*] Switched to the Steam Web API
  *   [+] Added detection of game, Steam Community, and trade bans
