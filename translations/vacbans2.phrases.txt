@@ -22,7 +22,7 @@
 	}
 	"ConVar_Actions"
 	{
-		"en"		"Actions to take on detected clients\n1:  Log to sourcemod/logs/vacbans.log\n2:  Kick\n4:  Ban\n8:  Display message to admins\n16: Display message to all players"
+		"en"		"Actions to take on detected clients\nAdd up the options from the list:\n1:  Log to sourcemod/logs/vacbans.log\n2:  Kick\n4:  Ban\n8:  Display message to admins\n16: Display message to all players"
 	}
 	"ConVar_Detect_VAC"
 	{
