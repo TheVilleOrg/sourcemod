@@ -8,6 +8,10 @@
 	{
 		"en"		"The named database config to use for caching"
 	}
+	"ConVar_APIKey"
+	{
+		"en"		"Your Steam Web API key"
+	}
 	"ConVar_CacheTime"
 	{
 		"en"		"How long in days before re-checking the same client"
@@ -81,6 +85,10 @@
 	"Message_List"
 	{
 		"en"		"Listing bans of all connected clients:"
+	}
+	"Error_NoKey"
+	{
+		"en"		"The ConVar sm_vacbans_apikey must be set to a valid Steam Web API key"
 	}
 	"Error_Socket"
 	{

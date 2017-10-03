@@ -103,6 +103,7 @@ public Plugin myinfo =
 Database g_hDatabase = null;
 
 ConVar g_hCVDB = null;
+ConVar g_hCVAPIKey = null;
 ConVar g_hCVCacheTime = null;
 ConVar g_hCVAction = null;
 ConVar g_hCVActions = null;
@@ -119,6 +120,11 @@ ConVar g_hCVDetectEconBans = null;
 char g_dbConfig[64];
 
 /**
+ * The Steam Web API key
+ */
+char g_apiKey[64];
+
+/**
  * The status cache for connected clients
  */
 int g_clientStatus[MAXPLAYERS + 1][5];
@@ -133,6 +139,8 @@ public void OnPluginStart()
 
 	Format(desc, sizeof(desc), "%T", "ConVar_DB", LANG_SERVER);
 	g_hCVDB = CreateConVar("sm_vacbans_db", "storage-local", desc);
+	Format(desc, sizeof(desc), "%T", "ConVar_APIKey", LANG_SERVER);
+	g_hCVAPIKey = CreateConVar("sm_vacbans_apikey", "", desc, FCVAR_PROTECTED);
 	Format(desc, sizeof(desc), "%T", "ConVar_CacheTime", LANG_SERVER);
 	g_hCVCacheTime = CreateConVar("sm_vacbans_cachetime", "1", desc, _, true, 0.0);
 	Format(desc, sizeof(desc), "%T", "ConVar_Action", LANG_SERVER);
@@ -212,6 +220,12 @@ public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] n
 
 public void OnConfigsExecuted()
 {
+	g_hCVAPIKey.GetString(g_apiKey, sizeof(g_apiKey));
+	if(strlen(g_apiKey) < 1)
+	{
+		SetFailState("%T", "Error_NoKey", LANG_SERVER);
+	}
+
 	char db[64];
 	g_hCVDB.GetString(db, sizeof(db));
 	if(!StrEqual(g_dbConfig, db))
@@ -248,14 +262,14 @@ public void OnClientPostAdminCheck(int client)
 public int OnSocketConnected(Handle hSock, DataPack hPack)
 {
 	char steamID[18];
-	char requestStr[128];
+	char requestStr[256];
 
 	hPack.Reset();
 	hPack.ReadCell();
 	hPack.ReadCell();
 	hPack.ReadString(steamID, sizeof(steamID));
 
-	Format(requestStr, sizeof(requestStr), "GET /vacbans/v1/check/%s HTTP/1.0\r\nHost: %s\r\nConnection: close\r\n\r\n", steamID, "dev.stevotvr.com");
+	Format(requestStr, sizeof(requestStr), "GET /ISteamUser/GetPlayerBans/v1/?key=%s&steamids=%s HTTP/1.0\r\nHost: %s\r\nConnection: close\r\n\r\n", g_apiKey, steamID, "api.steampowered.com");
 	SocketSend(hSock, requestStr);
 }
 
@@ -291,25 +305,56 @@ public int OnSocketDisconnected(Handle hSock, DataPack hPack)
 		return;
 	}
 
-	if(!StrEqual(responseData, "null", false))
+	g_clientStatus[client] = {0, 0, 0, 0, 0};
+
+	ReplaceString(responseData, sizeof(responseData), " ", "");
+	ReplaceString(responseData, sizeof(responseData), "\t", "");
+	ReplaceString(responseData, sizeof(responseData), "\n", "");
+	ReplaceString(responseData, sizeof(responseData), "\r", "");
+	ReplaceString(responseData, sizeof(responseData), "\"", "");
+	ReplaceString(responseData, sizeof(responseData), "{players:[{", "");
+	ReplaceString(responseData, sizeof(responseData), "}]}", "");
+
+	char parts[16][64];
+	int count = ExplodeString(responseData, ",", parts, sizeof(parts), sizeof(parts[]));
+	char kv[2][64];
+	for(int i = 0; i < count; i++)
 	{
-		char parts[5][8];
-		int count = ExplodeString(responseData, ",", parts, sizeof(parts), sizeof(parts[]), false);
+		if(ExplodeString(parts[i], ":", kv, sizeof(kv), sizeof(kv[])) < 2)
+		{
+			continue;
+		}
 
-		int vacBans = count > 0 ? StringToInt(parts[0]) : 0;
-		int daysSinceLast = count > 1 ? StringToInt(parts[1]) : 0;
-		int gameBans = count > 2 ? StringToInt(parts[2]) : 0;
-		bool communityBanned = count > 3 ? StringToInt(parts[3]) == 1 : false;
-		int econStatus = count > 4 ? StringToInt(parts[4]) : 0;
-
-		g_clientStatus[client][0] = vacBans;
-		g_clientStatus[client][1] = daysSinceLast;
-		g_clientStatus[client][2] = gameBans;
-		g_clientStatus[client][3] = communityBanned ? 1 : 0;
-		g_clientStatus[client][4] = econStatus;
-
-		HandleClient(client, steamID, false);
+		if(StrEqual(kv[0], "NumberOfVACBans"))
+		{
+			g_clientStatus[client][0] = StringToInt(kv[1]);
+		}
+		else if(StrEqual(kv[0], "DaysSinceLastBan"))
+		{
+			g_clientStatus[client][1] = StringToInt(kv[1]);
+		}
+		else if(StrEqual(kv[0], "NumberOfGameBans"))
+		{
+			g_clientStatus[client][2] = StringToInt(kv[1]);
+		}
+		else if(StrEqual(kv[0], "CommunityBanned"))
+		{
+			g_clientStatus[client][3] = StrEqual(kv[1], "true", false) ? 1 : 0;
+		}
+		else if(StrEqual(kv[0], "EconomyBan"))
+		{
+			if(StrEqual(kv[1], "probation", false))
+			{
+				g_clientStatus[client][4] = 1;
+			}
+			else if(StrEqual(kv[1], "banned", false))
+			{
+				g_clientStatus[client][4] = 2;
+			}
+		}
 	}
+
+	HandleClient(client, steamID, false);
 
 	delete hData;
 	delete hPack;
@@ -785,7 +830,7 @@ public void OnQueryPlayerLookup(Database db, DBResultSet results, const char[] e
 		hPack.WriteString(steamID);
 
 		SocketSetArg(hSock, hPack);
-		SocketConnect(hSock, OnSocketConnected, OnSocketReceive, OnSocketDisconnected, "dev.stevotvr.com", 80);
+		SocketConnect(hSock, OnSocketConnected, OnSocketReceive, OnSocketDisconnected, "api.steampowered.com", 80);
 	}
 }
 
