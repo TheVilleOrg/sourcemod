@@ -28,7 +28,7 @@
 	{
 		"en"		"Ignore VAC bans older than this many days (0 = disabled)"
 	}
-	"ConVar_VAC_Epoch"
+	"ConVar_VAC_Ignore_Before"
 	{
 		"en"		"Ignore VAC bans issued before this date (format: YYYY-MM-DD)"
 	}
