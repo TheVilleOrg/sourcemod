@@ -144,7 +144,7 @@ public void OnPluginStart()
 	Format(desc, sizeof(desc), "%T", "ConVar_VAC_Expire", LANG_SERVER);
 	g_hCVVACExpire = CreateConVar("sm_vacbans_vac_expire", "0", desc, _, true, 0.0);
 	Format(desc, sizeof(desc), "%T", "ConVar_VAC_Epoch", LANG_SERVER);
-	g_hCVVACEpoch = CreateConVar("sm_vacbans_vac_epoch", "", desc);
+	g_hCVVACEpoch = CreateConVar("sm_vacbans_vac_ignore_before", "", desc);
 	Format(desc, sizeof(desc), "%T", "ConVar_Detect_Game", LANG_SERVER);
 	g_hCVDetectGameBans = CreateConVar("sm_vacbans_detect_game_bans", "0", desc, _, true, 0.0, true, 1.0);
 	Format(desc, sizeof(desc), "%T", "ConVar_Detect_Community", LANG_SERVER);
