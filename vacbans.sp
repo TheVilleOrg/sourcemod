@@ -10,7 +10,6 @@
  *
  * Requirements:
  *   - Socket Extension by sfPlayer (http://forums.alliedmods.net/showthread.php?t=67640)
- *   - Steam Web API key (https://steamcommunity.com/dev/apikey)
  *
  * Credits:
  *   - voogru: finding the algorithm for converting SteamIDs
@@ -19,6 +18,8 @@
  *   - Dreizehnt: Russian translation
  *
  * Changelog:
+ * Oct 09, 2017 - v.2.2.0:
+ *   [*] The API key is now optional
  * Oct 03, 2017 - v.2.1.0:
  *   [*] Changed lookups to directly access the Steam Web API (requires key)
  *   [+] Added sm_vacbans_vac_ignore_before to ignore VAC bans before a specific date
