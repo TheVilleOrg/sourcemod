@@ -172,6 +172,7 @@ public void OnPluginStart()
 	AutoExecConfig(true, "vacbans");
 
 	g_hCVDB.AddChangeHook(OnDBConVarChanged);
+	g_hCVAPIKey.AddChangeHook(OnConVarChanged);
 	g_hCVAction.AddChangeHook(OnConVarChanged);
 	g_hCVActions.AddChangeHook(OnConVarChanged);
 	g_hCVDetectVACBans.AddChangeHook(OnConVarChanged);
@@ -197,6 +198,12 @@ public void OnDBConVarChanged(ConVar convar, const char[] oldValue, const char[]
 
 public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
+	if(convar == g_hCVAPIKey)
+	{
+		g_hCVAPIKey.GetString(g_apiKey, sizeof(g_apiKey));
+		return;
+	}
+
 	if(convar == g_hCVVACEpoch)
 	{
 		g_VACEpoch = 0;
@@ -253,12 +260,6 @@ public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] n
 
 public void OnConfigsExecuted()
 {
-	g_hCVAPIKey.GetString(g_apiKey, sizeof(g_apiKey));
-	if(strlen(g_apiKey) < 1)
-	{
-		SetFailState("%T", "Error_NoKey", LANG_SERVER);
-	}
-
 	char db[64];
 	g_hCVDB.GetString(db, sizeof(db));
 	if(!StrEqual(g_dbConfig, db))
@@ -302,7 +303,14 @@ public int OnSocketConnected(Handle hSock, DataPack hPack)
 	hPack.ReadCell();
 	hPack.ReadString(steamID, sizeof(steamID));
 
-	Format(requestStr, sizeof(requestStr), "GET /ISteamUser/GetPlayerBans/v1/?key=%s&steamids=%s HTTP/1.0\r\nHost: %s\r\nConnection: close\r\n\r\n", g_apiKey, steamID, "api.steampowered.com");
+	if(strlen(g_apiKey) > 0)
+	{
+		Format(requestStr, sizeof(requestStr), "GET /ISteamUser/GetPlayerBans/v1/?key=%s&steamids=%s HTTP/1.0\r\nHost: %s\r\nConnection: close\r\n\r\n", g_apiKey, steamID, "api.steampowered.com");
+	}
+	else
+	{
+		Format(requestStr, sizeof(requestStr), "GET /vacbans/v2/check/%s HTTP/1.0\r\nHost: %s\r\nConnection: close\r\n\r\n", steamID, "dev.stevotvr.com");
+	}
 	SocketSend(hSock, requestStr);
 }
 
@@ -859,7 +867,14 @@ public void OnQueryPlayerLookup(Database db, DBResultSet results, const char[] e
 		hPack.WriteString(steamID);
 
 		SocketSetArg(hSock, hPack);
-		SocketConnect(hSock, OnSocketConnected, OnSocketReceive, OnSocketDisconnected, "api.steampowered.com", 80);
+		if(strlen(g_apiKey) > 0)
+		{
+			SocketConnect(hSock, OnSocketConnected, OnSocketReceive, OnSocketDisconnected, "api.steampowered.com", 80);
+		}
+		else
+		{
+			SocketConnect(hSock, OnSocketConnected, OnSocketReceive, OnSocketDisconnected, "dev.stevotvr.com", 80);
+		}
 	}
 }
 

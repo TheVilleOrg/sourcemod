@@ -86,10 +86,6 @@
 	{
 		"en"		"Listing bans of all connected clients:"
 	}
-	"Error_NoKey"
-	{
-		"en"		"The ConVar sm_vacbans_apikey must be set to a valid Steam Web API key"
-	}
 	"Error_Socket"
 	{
 		"#format"	"{1:d},{2:d}"
