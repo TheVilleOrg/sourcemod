@@ -28,6 +28,8 @@
 * Apr 15, 2022 - v.1.3.1:
 *   [*] Increased the length limit of the map name in the demo filename
 *   [*] Fixed workshop map demo filenames missing the .dem extension
+* Jun 05, 2022 - v.1.3.2:
+*   [*] Handled tv_record not resolving relative paths including "."
 * 
 */
 
@@ -36,7 +38,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.3.1"
+#define PLUGIN_VERSION "1.3.2"
 
 public Plugin myinfo = 
 {
@@ -80,10 +82,7 @@ public void OnPluginStart()
 
 	char sPath[PLATFORM_MAX_PATH];
 	g_hDemoPath.GetString(sPath, sizeof(sPath));
-	if(!DirExists(sPath))
-	{
-		InitDirectory(sPath);
-	}
+	OnConVarChanged(g_hDemoPath, sPath, sPath);
 
 	g_hMinPlayersStart.AddChangeHook(OnConVarChanged);
 	g_hIgnoreBots.AddChangeHook(OnConVarChanged);
@@ -101,9 +100,23 @@ public void OnConVarChanged(ConVar convar, const char[] oldValue, const char [] 
 {
 	if(convar == g_hDemoPath)
 	{
-		if(!DirExists(newValue))
+		// Handle tv_record not resolving relative paths including "."
+		char demoPath[PLATFORM_MAX_PATH];
+		g_hDemoPath.GetString(demoPath, sizeof(demoPath));
+		if (StrEqual(demoPath, "."))
 		{
-			InitDirectory(newValue);
+			demoPath = "";
+		}
+		ReplaceString(demoPath, sizeof(demoPath), "./", "");
+		g_hDemoPath.SetString(demoPath);
+		if (StrEqual(demoPath, ""))
+		{
+			return;
+		}
+
+		if(!DirExists(demoPath))
+		{
+			InitDirectory(demoPath);
 		}
 	}
 	else
@@ -236,7 +249,17 @@ void StartRecord()
 		// replace periods in map path name with underscores, so workshop map demos still get a .dem extension
 		ReplaceString(sMap, sizeof(sMap), ".", "_", false);
 
-		ServerCommand("tv_record \"%s/auto-%s-%s\"", sPath, sTime, sMap);
+		if (StrEqual(sPath, ""))
+		{
+			ServerCommand("tv_record \"auto-%s-%s\"", sTime, sMap);
+		}
+		else
+		{
+			char demoFilename[72];
+			Format(demoFilename, sizeof(demoFilename), "%s/auto-%s-%s", sPath, sTime, sMap);
+			ReplaceString(demoFilename, sizeof(demoFilename), "//", "/", false);
+			ServerCommand("tv_record \"%s\"", demoFilename);
+		}
 		g_bIsRecording = true;
 
 		LogMessage("Recording to auto-%s-%s.dem", sTime, sMap);
