@@ -32,7 +32,7 @@
  */
 
 #include <sourcemod>
-#include "include/nextmap.inc"
+#include "nextmap.inc"
 
 #pragma semicolon 1
 #pragma newdecls required
