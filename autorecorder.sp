@@ -25,6 +25,9 @@
 *   [*] Fixed minimum player count setting being off by one
 *   [*] Fixed player counting code getting out of range
 *   [*] Updated source code to the new syntax
+* Apr 15, 2022 - v.1.3.1:
+*   [*] Increased the length limit of the map name in the demo filename
+*   [*] Fixed workshop map demo filenames missing the .dem extension
 * 
 */
 
@@ -33,7 +36,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.3.0"
+#define PLUGIN_VERSION "1.3.1"
 
 public Plugin myinfo = 
 {
@@ -222,14 +225,16 @@ void StartRecord()
 	{
 		char sPath[PLATFORM_MAX_PATH];
 		char sTime[16];
-		char sMap[32];
+		char sMap[48];
 
 		g_hDemoPath.GetString(sPath, sizeof(sPath));
 		FormatTime(sTime, sizeof(sTime), "%Y%m%d-%H%M%S", GetTime());
 		GetCurrentMap(sMap, sizeof(sMap));
 
 		// replace slashes in map path name with dashes, to prevent fail on workshop maps
-		ReplaceString(sMap, sizeof(sMap), "/", "-", false);		
+		ReplaceString(sMap, sizeof(sMap), "/", "-", false);
+		// replace periods in map path name with underscores, so workshop map demos still get a .dem extension
+		ReplaceString(sMap, sizeof(sMap), ".", "_", false);
 
 		ServerCommand("tv_record \"%s/auto-%s-%s\"", sPath, sTime, sMap);
 		g_bIsRecording = true;
